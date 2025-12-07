@@ -1,7 +1,9 @@
 <script lang="ts">
 import { usePdfiumEngine } from '@embedpdf/engines/svelte';
 import { EmbedPDF } from '@embedpdf/core/svelte';
+import ViewerToolBar from './ViewerToolBar.svelte';
 import { createPluginRegistration } from '@embedpdf/core';
+import { ZoomPluginPackage } from '@embedpdf/plugin-zoom/svelte';
  
 // Import the essential plugins and their components
 import { ViewportPluginPackage, Viewport } from '@embedpdf/plugin-viewport/svelte';
@@ -26,6 +28,7 @@ const plugins = [
   createPluginRegistration(ViewportPluginPackage),
   createPluginRegistration(ScrollPluginPackage),
   createPluginRegistration(RenderPluginPackage),
+  createPluginRegistration(ZoomPluginPackage),
 ];
 </script>
  
@@ -39,13 +42,14 @@ const plugins = [
   </div>
 {/snippet}
  
-<div style="height: 500px; border: 1px solid black;">
+<div style="height: 1000px; border: 1px solid black;">
   {#if pdfEngine.isLoading || !pdfEngine.engine}
     <div class="loading-pane">
       Loading PDF Engine...
     </div>
   {:else}
     <EmbedPDF engine={pdfEngine.engine} {plugins}>
+      <ViewerToolBar />
       <Viewport class="viewport-class">
         <Scroller {RenderPageSnippet} />
       </Viewport>
@@ -59,8 +63,5 @@ const plugins = [
     justify-content: center;
     align-items: center;
     height: 100%;
-  }
-  .viewport-class {
-    background-color: #f1f3f5;
   }
 </style>
