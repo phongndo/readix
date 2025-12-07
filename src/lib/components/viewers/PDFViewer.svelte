@@ -10,6 +10,9 @@ import { ViewportPluginPackage, Viewport } from '@embedpdf/plugin-viewport/svelt
 import { Scroller, ScrollPluginPackage, type RenderPageProps } from '@embedpdf/plugin-scroll/svelte';
 import { LoaderPluginPackage } from '@embedpdf/plugin-loader/svelte';
 import { RenderLayer, RenderPluginPackage } from '@embedpdf/plugin-render/svelte';
+import { PagePointerProvider, InteractionManagerPluginPackage } from '@embedpdf/plugin-interaction-manager/svelte'
+import { SelectionLayer, SelectionPluginPackage } from '@embedpdf/plugin-selection/svelte';
+import { PanPluginPackage } from '@embedpdf/plugin-pan/svelte';
  
 // 1. Initialize the engine with the Svelte store
 const pdfEngine = usePdfiumEngine();
@@ -29,20 +32,31 @@ const plugins = [
   createPluginRegistration(ScrollPluginPackage),
   createPluginRegistration(RenderPluginPackage),
   createPluginRegistration(ZoomPluginPackage),
+  createPluginRegistration(InteractionManagerPluginPackage),
+  createPluginRegistration(SelectionPluginPackage),
+  createPluginRegistration(PanPluginPackage, {
+    defaultMode: 'mobile'
+  }),
+
 ];
 </script>
  
 {#snippet RenderPageSnippet(page: RenderPageProps)}
-  <div
-    style:width="{page.width}px"
-    style:height="{page.height}px"
-    style:position="relative"
-  >
-    <RenderLayer pageIndex={page.pageIndex} />
-  </div>
+  <div style:width="{page.width}px" style:height="{page.height}px" style:position="relative">
+    <PagePointerProvider 
+      pageIndex={page.pageIndex} 
+      pageWidth={page.width} 
+      pageHeight={page.height}
+      scale={page.scale}
+      rotation={page.rotation}
+    >
+      <RenderLayer pageIndex={page.pageIndex} scale={page.scale}/>
+      <SelectionLayer pageIndex={page.pageIndex} scale={page.scale} />
+    </PagePointerProvider>
+  </div>
 {/snippet}
  
-<div style="height: 1000px; border: 1px solid black;">
+<div style="height: 800; border: 1px solid black;">
   {#if pdfEngine.isLoading || !pdfEngine.engine}
     <div class="loading-pane">
       Loading PDF Engine...
