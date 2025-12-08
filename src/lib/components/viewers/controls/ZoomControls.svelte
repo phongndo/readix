@@ -8,8 +8,8 @@ const zoom = useZoom();
 {#if zoom.provides}
   <div style="padding: 8px; background: #eee; display: flex; gap: 8px; align-items: center;">
     <span>Zoom: {Math.round(zoom.state.currentZoomLevel * 100)}%</span>
-    <button onclick={() => zoom.provides.zoomOut()}>-</button>
-    <button onclick={() => zoom.provides.zoomIn()}>+</button>
-    <button onclick={() => zoom.provides.requestZoom(1.0)}>Reset</button>
+    <button onclick={() => zoom.provides?.zoomOut()}>-</button>
+    <button onclick={() => zoom.provides?.zoomIn()}>+</button>
+    <button onclick={() => zoom.provides?.requestZoom(1.0)}>Reset</button>
   </div>
 {/if}

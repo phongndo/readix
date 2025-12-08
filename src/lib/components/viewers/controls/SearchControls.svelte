@@ -15,6 +15,6 @@ $effect(() => {
 });
 </script>
  
-<button onclick={() => selection.provides?.copyToClipboard()} disabled={!hasSelection}>
+<button type="button" onclick={() => selection.provides?.copyToClipboard()} disabled={!hasSelection}>
   Copy
 </button>

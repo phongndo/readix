@@ -16,6 +16,7 @@
         "@embedpdf/plugin-selection": "^1.5.0",
         "@embedpdf/plugin-viewport": "^1.5.0",
         "@embedpdf/plugin-zoom": "^1.5.0",
+        "@lucide/svelte": "^0.556.0",
         "@skeletonlabs/skeleton": "^4.7.4",
         "@skeletonlabs/skeleton-svelte": "^4.7.4",
         "@supabase/supabase-js": "^2.86.2",
@@ -180,6 +181,8 @@
     "@jridgewell/sourcemap-codec": ["@jridgewell/sourcemap-codec@1.5.5", "", {}, "sha512-cYQ9310grqxueWbl+WuIUIaiUaDcj7WOq5fVhEljNVgRfOUhY9fy2zTvfoqWsnebh8Sl70VScFbICvJnLKB0Og=="],
 
     "@jridgewell/trace-mapping": ["@jridgewell/trace-mapping@0.3.31", "", { "dependencies": { "@jridgewell/resolve-uri": "^3.1.0", "@jridgewell/sourcemap-codec": "^1.4.14" } }, "sha512-zzNR+SdQSDJzc8joaeP8QQoCQr8NuYx2dIIytl1QeBEZHJ9uW6hebsrYgbz8hJwUQao3TWCMtmfV8Nu1twOLAw=="],
+
+    "@lucide/svelte": ["@lucide/svelte@0.556.0", "", { "peerDependencies": { "svelte": "^5" } }, "sha512-jsJhyyd2xrJ4WtflO5TrTtyCBacF4OLBNCzotvwh4zfbbuE6aqdblx+OB0zg6zOno06ib1GJGdDcfR/2TUcb7g=="],
 
     "@playwright/test": ["@playwright/test@1.57.0", "", { "dependencies": { "playwright": "1.57.0" }, "bin": { "playwright": "cli.js" } }, "sha512-6TyEnHgd6SArQO8UO2OMTxshln3QMWBtPGrOCgs3wVEmQmwyuNtB10IZMfmYDE0riwNR1cu4q+pPcxMVtaG3TA=="],
 
