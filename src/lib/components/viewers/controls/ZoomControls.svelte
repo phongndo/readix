@@ -3,23 +3,20 @@
 	// useZoom returns a plain object, not a Svelte store
 	const zoom = useZoom();
 </script>
+
 {#if zoom.provides}
 	<div>
-    <span>
+		<span>
 			Zoom: {Math.round(zoom.state.currentZoomLevel * 100)}%
 		</span>
 		<button
-      type="button"
+			type="button"
 			class="btn btn-xs variant-ghost"
 			on:click={() => zoom.provides?.zoomOut()}
 		>
 			-
 		</button>
-		<button
-			type="button"
-			class="btn btn-xs variant-ghost"
-			on:click={() => zoom.provides?.zoomIn()}
-		>
+		<button type="button" class="btn btn-xs variant-ghost" on:click={() => zoom.provides?.zoomIn()}>
 			+
 		</button>
 		<button

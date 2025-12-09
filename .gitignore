@@ -29,8 +29,13 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
+
 # Test & coverage artifacts
 coverage
 .vitest
 playwright-report
 .playwright-artifacts
+
+# Supabase
+.supabase
+supabase/.temp/
