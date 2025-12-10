@@ -1,9 +1,5 @@
 <script lang="ts">
-	import { goto } from '$app/navigation';
-
-	function navigateToDashboard() {
-		goto('/dashboard');
-	}
+	import { resolve } from '$app/paths';
 </script>
 
 <svelte:head>
@@ -21,12 +17,8 @@
 			Welcome to <span class="font-bold text-primary-600">Readix</span>
 		</h1>
 		<p class="mt-4 text-lg text-center max-w-md">A pdf reading platform</p>
-		<button
-			type="button"
-			class="bg-primary-600 hover:bg-primary-800 font-bold py-2 px-4"
-			onclick={navigateToDashboard}
-		>
+		<a href={resolve('/dashboard')} class="bg-primary-600 hover:bg-primary-800 font-bold py-2 px-4">
 			Start your journey
-		</button>
+		</a>
 	</div>
 </main>

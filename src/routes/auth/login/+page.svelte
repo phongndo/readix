@@ -1,6 +1,7 @@
 <script lang="ts">
-  import { LoginForm } from '$features/auth';
-  let { form } = $props();
+	import { LoginForm } from '$features/auth';
+
+	let { form } = $props();
 </script>
 
 <main>

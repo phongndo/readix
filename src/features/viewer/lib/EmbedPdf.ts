@@ -8,25 +8,25 @@ import { InteractionManagerPluginPackage } from '@embedpdf/plugin-interaction-ma
 import { SelectionPluginPackage } from '@embedpdf/plugin-selection/svelte';
 import { PanPluginPackage } from '@embedpdf/plugin-pan/svelte';
 export interface PDFLoadOptions {
-  id: string;
-  url: string;
+	id: string;
+	url: string;
 }
 export function createPdfPlugins(options: PDFLoadOptions) {
-  return [
-    createPluginRegistration(LoaderPluginPackage, {
-      loadingOptions: {
-        type: 'url',
-        pdfFile: { id: options.id, url: options.url }
-      }
-    }),
-    createPluginRegistration(ViewportPluginPackage),
-    createPluginRegistration(ScrollPluginPackage),
-    createPluginRegistration(RenderPluginPackage),
-    createPluginRegistration(ZoomPluginPackage),
-    createPluginRegistration(InteractionManagerPluginPackage),
-    createPluginRegistration(SelectionPluginPackage),
-    createPluginRegistration(PanPluginPackage, { defaultMode: 'mobile' })
-  ];
+	return [
+		createPluginRegistration(LoaderPluginPackage, {
+			loadingOptions: {
+				type: 'url',
+				pdfFile: { id: options.id, url: options.url }
+			}
+		}),
+		createPluginRegistration(ViewportPluginPackage),
+		createPluginRegistration(ScrollPluginPackage),
+		createPluginRegistration(RenderPluginPackage),
+		createPluginRegistration(ZoomPluginPackage),
+		createPluginRegistration(InteractionManagerPluginPackage),
+		createPluginRegistration(SelectionPluginPackage),
+		createPluginRegistration(PanPluginPackage, { defaultMode: 'mobile' })
+	];
 }
 // Re-export commonly used types
 export type { RenderPageProps } from '@embedpdf/plugin-scroll/svelte';
