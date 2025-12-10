@@ -1,11 +1,7 @@
 <script lang="ts">
-	import { supabase } from '$lib/supabase/client';
-	import { goto } from '$app/navigation';
+  import { LoginForm } from '../components/LoginForm.svelte';
 
-	let email: string = '';
-	let password: string = '';
-	let loading: boolean = false;
-	let error: string | null = null;
+  export let form;
 </script>
 
 <svelte:head>

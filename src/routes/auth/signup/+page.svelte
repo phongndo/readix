@@ -1,5 +1,5 @@
 <script lang="ts">
-	import SignupForm from '$lib/components/auth/signupForm.svelte';
+	import SignupForm from '$features/auth/ui/SignupForm.svelte';
 </script>
 
 <main>

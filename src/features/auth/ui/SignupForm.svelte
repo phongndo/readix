@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { supabase } from '$lib/supabase/client';
+  import { signUpWithEmail } from '../api/auth.api.ts';
 	import { goto } from '$app/navigation';
 
   let firstname: string = '';
@@ -8,6 +8,11 @@
 	let password: string = '';
 	let loading: boolean = false;
 	let error: string | null = null;
+
+	async function handleSubmit() {
+
+	}
+
 </script>
 
 <svelte:head>

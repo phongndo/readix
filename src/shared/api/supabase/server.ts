@@ -1,4 +1,4 @@
-import { PUBLIC_SUPABASE_PUBLISHABLE_KEY, PUBLIC_SUPABASE_URL } from '$env/static/public';
+import { env } from '$shared/config';
 import { createServerClient } from '@supabase/ssr';
 import type { RequestEvent } from '@sveltejs/kit';
 import { createCookieHandler } from './cookies';
@@ -9,7 +9,7 @@ import { createCookieHandler } from './cookies';
  * @returns SupabaseClient with automatic cookie handling
  */
 export const getSupabaseServer = (event: RequestEvent) => {
-	return createServerClient(PUBLIC_SUPABASE_URL, PUBLIC_SUPABASE_PUBLISHABLE_KEY, {
+	return createServerClient(env.SUPABASE_URL, env.PUBLIC_SUPABASE_PUBLISHABLE_KEY, {
 		cookies: createCookieHandler(event)
 	});
 };

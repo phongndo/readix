@@ -60,6 +60,7 @@
 		"@skeletonlabs/skeleton": "^4.7.4",
 		"@skeletonlabs/skeleton-svelte": "^4.7.4",
 		"@supabase/ssr": "^0.8.0",
-		"@supabase/supabase-js": "^2.86.2"
+		"@supabase/supabase-js": "^2.86.2",
+		"zod": "^4.1.13"
 	}
 }
