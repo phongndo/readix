@@ -5,7 +5,7 @@ import type {
   SignUpResult, 
   OAuthResult, 
   SignOutResult 
-} from '../models/types';
+} from '../models/schemas';
 
 export async function signInWithEmail(
   email: string, 

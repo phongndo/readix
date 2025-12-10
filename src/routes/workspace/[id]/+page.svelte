@@ -1,5 +1,5 @@
 <script lang="ts">
-	import PDFViewer from '$lib/components/viewers/PDFViewer.svelte';
+  import { PDFViewer } from '$features/viewer';
 </script>
 
 <PDFViewer />

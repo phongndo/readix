@@ -9,7 +9,7 @@ import { createCookieHandler } from './cookies';
  * @returns SupabaseClient with automatic cookie handling
  */
 export const getSupabaseServer = (event: RequestEvent) => {
-	return createServerClient(env.SUPABASE_URL, env.PUBLIC_SUPABASE_PUBLISHABLE_KEY, {
+	return createServerClient(env.SUPABASE_URL, env.SUPABASE_PUBLISHABLE_KEY, {
 		cookies: createCookieHandler(event)
 	});
 };

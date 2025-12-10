@@ -28,5 +28,17 @@
 		>
 			Start your journey
 		</button>
+    <!-- Create if no account sign up -->
+    <div>
+      <h2 class="font-bold text-2xl">Join Readix</h2>
+      <p class="mt-2 text-lg text-center max-w-md">Sign up to start your reading journey!</p>
+      <button
+        type="button"
+        class="bg-primary-600 hover:bg-primary-800 font-bold py-2 px-4"
+        on:click={navigateToDashboard}
+      >
+        Sign Up
+      </button>
+    </div>
 	</div>
 </main>
