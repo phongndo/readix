@@ -1,11 +1,7 @@
-import { PUBLIC_SUPABASE_URL, PUBLIC_SUPABASE_PUBLISHABLE_KEY } from '$env/static/public';
-import { createServerClient } from '@supabase/ssr';
 import type { Handle } from '@sveltejs/kit';
-import { createCookieHandler } from '$shared/api/supabase';
+import { getSupabaseServer } from '$shared/api/supabase';
 export const handle: Handle = async ({ event, resolve }) => {
-	event.locals.supabase = createServerClient(PUBLIC_SUPABASE_URL, PUBLIC_SUPABASE_PUBLISHABLE_KEY, {
-		cookies: createCookieHandler(event)
-	});
+	event.locals.supabase = getSupabaseServer(event);
 	/**
 	 * Unlike `supabase.auth.getSession()`, which returns the session _without_
 	 * validating the JWT, this function also calls `getUser()` to validate the

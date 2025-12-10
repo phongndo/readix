@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { goto } from '$app/navigation';
   import { enhance } from '$app/forms';
   
   interface Props {
@@ -9,6 +10,11 @@
   }
   
   let { form = null }: Props = $props();
+
+
+	function navigateToSignUp() {
+		goto('/auth/signup');
+	}
 </script>
 
 <svelte:head>
@@ -57,6 +63,7 @@
   <button
     type="button"
     class="bg-primary-600 hover:bg-primary-800 font-bold py-2 px-4"
+    onclick={navigateToSignUp}
   >
     Sign Up
   </button>

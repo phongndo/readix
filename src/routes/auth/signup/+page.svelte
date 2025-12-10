@@ -1,6 +1,6 @@
 <script lang="ts">
-	import SignupForm from '$features/auth/ui/SignupForm.svelte';
-  export let form;
+	import { SignupForm } from '$features/auth';
+  let { form } = $props();
 </script>
 
 <main>

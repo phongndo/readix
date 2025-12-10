@@ -1,6 +1,6 @@
 <script lang="ts">
-	import LoginForm from '$features/auth/ui/LoginForm.svelte';
-	export let form;
+  import { LoginForm } from '$features/auth';
+  let { form } = $props();
 </script>
 
 <main>
