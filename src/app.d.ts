@@ -1,14 +1,15 @@
-import type { SupabaseClient, User } from '@supabase/supabase-js';
+import type { SupabaseClient } from '@supabase/supabase-js';
+import type { AppUser } from '$entities/user';
 
 declare global {
 	namespace App {
 		// interface Error {}
 		interface Locals {
 			supabase: SupabaseClient;
-			user: User | null;
+			user: AppUser | null;
 		}
 		interface PageData {
-			user: User | null;
+			user: AppUser | null;
 		}
 		// interface PageState {}
 		// interface Platform {}
