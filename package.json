@@ -49,6 +49,8 @@
 		"vitest-browser-svelte": "^2.0.1"
 	},
 	"dependencies": {
+		"@effect/platform": "^0.93.6",
+		"@effect/schema": "^0.75.5",
 		"@embedpdf/core": "^1.5.0",
 		"@embedpdf/engines": "^1.5.0",
 		"@embedpdf/pdfium": "^1.5.0",
@@ -66,7 +68,7 @@
 		"@supabase/ssr": "^0.8.0",
 		"@supabase/supabase-js": "^2.86.2",
 		"drizzle-orm": "^0.45.0",
-		"postgres": "^3.4.7",
-		"zod": "^4.1.13"
+		"effect": "^3.19.11",
+		"postgres": "^3.4.7"
 	}
 }

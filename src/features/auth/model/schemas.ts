@@ -1,25 +1,51 @@
-import { z } from 'zod';
+import { Schema } from '@effect/schema';
+
 import type {
-	AuthError,
-	AuthResponse,
-	AuthTokenResponsePassword,
-	OAuthResponse
+  AuthError,
+  AuthResponse,
+  AuthTokenResponsePassword,
+  OAuthResponse
 } from '@supabase/supabase-js';
-// ============ Zod Schemas ============
-export const loginSchema = z.object({
-	email: z.email('Invalid email address'),
-	password: z.string().min(6, 'Password must be at least 6 characters')
+
+const Email = Schema.String.pipe(
+  Schema.pattern(/^[^\s@]+@[^\s@]+\.[^\s@]+$/, {
+    message: () => 'Invalid email address'
+  })
+);
+
+// Password schema with min length
+const Password = Schema.String.pipe(
+  Schema.minLength(6, {
+    message: () => 'Password must be at least 6 characters'
+  })
+);
+
+// Required string
+const RequiredString = (field: string) =>
+  Schema.String.pipe(
+    Schema.minLength(1, { message: () => `${field} is required` })
+  );
+
+// Login schema
+export const LoginSchema = Schema.Struct({
+  email: Email,
+  password: Password
 });
-export const signupSchema = z.object({
-	firstname: z.string().min(1, 'First name is required'),
-	lastname: z.string().min(1, 'Last name is required'),
-	email: z.email('Invalid email address'),
-	password: z.string().min(6, 'Password must be at least 6 characters')
+
+// Signup schema
+export const SignupSchema = Schema.Struct({
+  firstname: RequiredString('First name'),
+  lastname: RequiredString('Last name'),
+  email: Email,
+  password: Password
 });
-// ============ Inferred Types ============
-export type LoginInput = z.infer<typeof loginSchema>;
-export type SignupInput = z.infer<typeof signupSchema>;
-// ============ External Types ============
+
+export type LoginInput = typeof LoginSchema.Type;
+export type SignupInput = typeof SignupSchema.Type;
+
+export const decodeLoginInput = Schema.decodeUnknownEither(LoginSchema);
+export const decodeSignupInput = Schema.decodeUnknownEither(SignupSchema);
+
 export type AuthProvider = 'google' | 'github';
 export type SignInResult = AuthTokenResponsePassword;
 export type SignUpResult = AuthResponse;

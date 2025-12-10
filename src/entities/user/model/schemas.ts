@@ -1,42 +1,37 @@
-import { z } from 'zod';
+import { Schema } from '@effect/schema';
 import type { User as SupabaseUser } from '@supabase/supabase-js';
 
-// ============ Zod Schemas ============
+export type { Profile, NewProfile } from '$shared/api/db/schema';
 
-// Authenticated user (session data)
-export const appUserSchema = z.object({
-	id: z.string().uuid(),
-	email: z.string().email(),
-	avatarUrl: z.string().url().nullable().optional(),
-	createdAt: z.string().datetime()
+export const UpdateProfileSchema = Schema.Struct({
+  firstName: Schema.optional(
+    Schema.String.pipe(
+      Schema.minLength(1, { message: () => 'First name is required' })
+    )
+  ),
+  lastName: Schema.optional(
+    Schema.String.pipe(
+      Schema.minLength(1, { message: () => 'Last name is required' })
+    )
+  ),
+  avatarUrl: Schema.optional(Schema.NullOr(Schema.String))
 });
+export type UpdateProfileInput = typeof UpdateProfileSchema.Type;
+export const decodeUpdateProfile = Schema.decodeUnknownEither(UpdateProfileSchema);
 
-// Profile as stored in DB
-export const profileSchema = z.object({
-	id: z.string().uuid(),
-	first_name: z.string().min(1),
-	last_name: z.string().min(1),
-	avatar_url: z.string().url().nullable(),
-	created_at: z.string().datetime(),
-	updated_at: z.string().datetime()
+export const AppUserSchema = Schema.Struct({
+  id: Schema.UUID,
+  email: Schema.String,
+  avatarUrl: Schema.NullOr(Schema.String),
+  createdAt: Schema.String
 });
-// For updating profile (partial, no id/timestamps)
-export const updateProfileSchema = z.object({
-	first_name: z.string().min(1, 'First name is required').optional(),
-	last_name: z.string().min(1, 'Last name is required').optional(),
-	avatar_url: z.string().url('Invalid URL').nullable().optional()
-});
-// ============ Inferred Types ============
-export type AppUser = z.infer<typeof appUserSchema>;
-export type Profile = z.infer<typeof profileSchema>;
-export type UpdateProfileInput = z.infer<typeof updateProfileSchema>;
+export type AppUser = typeof AppUserSchema.Type;
 
-// ============ Mappers ============
 export function toAppUser(user: SupabaseUser): AppUser {
-	return {
-		id: user.id,
-		email: user.email ?? '',
-		avatarUrl: user.user_metadata?.avatar_url ?? null,
-		createdAt: user.created_at
-	};
+  return {
+    id: user.id,
+    email: user.email ?? '',
+    avatarUrl: user.user_metadata?.avatar_url ?? null,
+    createdAt: user.created_at
+  };
 }
