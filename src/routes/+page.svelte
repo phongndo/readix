@@ -17,7 +17,7 @@
 			Welcome to <span class="font-bold text-primary-600">Readix</span>
 		</h1>
 		<p class="mt-4 text-lg text-center max-w-md">A pdf reading platform</p>
-		<a href={resolve('/dashboard')} class="bg-primary-600 hover:bg-primary-800 font-bold py-2 px-4">
+		<a href={resolve('/library')} class="bg-primary-600 hover:bg-primary-800 font-bold py-2 px-4">
 			Start your journey
 		</a>
 	</div>

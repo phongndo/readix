@@ -16,14 +16,16 @@
 	<title>Login</title>
 </svelte:head>
 
-<section class="flex flex-col min-h-screen justify-center items-center space-y-2">
-	<h1 class="font-bold text-2xl">Enjoy reading</h1>
+<section class="box-border flex flex-col min-h-screen justify-center items-center space-y-2">
+	<p class="font-bold text-4xl text-center">Welcome back</p>
+  <p class="text-center">Sign in to continue reading</p>
 
-	<form method="POST" use:enhance class="flex flex-col space-y-2">
+	<form method="POST" use:enhance class="mt-4 flex flex-col space-y-2">
 		{#if form?.errors?.form}
 			<p class="text-red-500">{form.errors.form[0]}</p>
 		{/if}
 		<div>
+      <p>Email</p>
 			<input
 				name="email"
 				type="email"
@@ -37,6 +39,7 @@
 			{/if}
 		</div>
 		<div>
+      <p>Password</p>
 			<input
 				name="password"
 				type="password"
@@ -56,9 +59,5 @@
 		</button>
 	</form>
 	<!-- Create if no account sign up -->
-	<h2 class="font-bold text-2xl">Join Readix</h2>
-	<p class="mt-2 text-lg text-center max-w-md">Sign up to start your reading journey!</p>
-	<a href={resolve('/auth/signup')} class="bg-primary-600 hover:bg-primary-800 font-bold py-2 px-4">
-		Sign Up
-	</a>
+	<p class="mt-4 text-center max-w-md">Don't have an account? <span> <a href={resolve('/auth/signup')} class="text-primary-600 hover:underline">Sign Up</a></span></p>
 </section>
