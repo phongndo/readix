@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
-  import { resolve } from '$app/paths';
+	import { resolve } from '$app/paths';
 
 	interface Props {
 		form?: {
@@ -25,14 +25,14 @@
 </svelte:head>
 <section class="flex flex-col min-h-screen justify-center items-center space-y-2">
 	<p class="font-bold text-4xl text-center">Create an account</p>
-  <p class="text-center">Start reading with readix</p>
+	<p class="text-center">Start reading with readix</p>
 
 	<form method="POST" use:enhance class="mt-4 flex flex-col space-y-2">
 		{#if form?.errors?.form}
 			<p class="text-red-500">{form.errors.form[0]}</p>
 		{/if}
 		<div>
-      <p>First Name</p>
+			<p>First Name</p>
 			<input
 				name="firstname"
 				type="text"
@@ -46,7 +46,7 @@
 			{/if}
 		</div>
 		<div>
-      <p>Last Name</p>
+			<p>Last Name</p>
 			<input
 				name="lastname"
 				type="text"
@@ -60,7 +60,7 @@
 			{/if}
 		</div>
 		<div>
-      <p>Email</p>
+			<p>Email</p>
 			<input
 				name="email"
 				type="email"
@@ -74,7 +74,7 @@
 			{/if}
 		</div>
 		<div>
-      <p>Password</p>
+			<p>Password</p>
 			<input
 				name="password"
 				type="password"
@@ -93,5 +93,9 @@
 			Sign up
 		</button>
 	</form>
-	<p class="mt-4 text-center max-w-md">Already have an account? <span> <a href={resolve('/auth/login')} class="text-primary-600 hover:underline">Log In</a></span></p>
+	<p class="mt-4 text-center max-w-md">
+		Already have an account? <span>
+			<a href={resolve('/auth/login')} class="text-primary-600 hover:underline">Log In</a></span
+		>
+	</p>
 </section>

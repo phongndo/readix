@@ -18,14 +18,14 @@
 
 <section class="box-border flex flex-col min-h-screen justify-center items-center space-y-2">
 	<p class="font-bold text-4xl text-center">Welcome back</p>
-  <p class="text-center">Sign in to continue reading</p>
+	<p class="text-center">Sign in to continue reading</p>
 
 	<form method="POST" use:enhance class="mt-4 flex flex-col space-y-2">
 		{#if form?.errors?.form}
 			<p class="text-red-500">{form.errors.form[0]}</p>
 		{/if}
 		<div>
-      <p>Email</p>
+			<p>Email</p>
 			<input
 				name="email"
 				type="email"
@@ -39,7 +39,7 @@
 			{/if}
 		</div>
 		<div>
-      <p>Password</p>
+			<p>Password</p>
 			<input
 				name="password"
 				type="password"
@@ -59,5 +59,9 @@
 		</button>
 	</form>
 	<!-- Create if no account sign up -->
-	<p class="mt-4 text-center max-w-md">Don't have an account? <span> <a href={resolve('/auth/signup')} class="text-primary-600 hover:underline">Sign Up</a></span></p>
+	<p class="mt-4 text-center max-w-md">
+		Don't have an account? <span>
+			<a href={resolve('/auth/signup')} class="text-primary-600 hover:underline">Sign Up</a></span
+		>
+	</p>
 </section>

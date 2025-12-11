@@ -16,7 +16,8 @@
 		"test": "npm run test:unit -- --run && npm run test:e2e",
 		"test:e2e": "playwright test",
 		"db:generate": "drizzle-kit generate",
-		"db:push": "drizzle-kit push",
+		"db:push": "supabase db push",
+		"db:policies": "supabase db execute --file supabase/rls/policies.sql",
 		"db:studio": "drizzle-kit studio"
 	},
 	"devDependencies": {
@@ -62,6 +63,7 @@
 		"@embedpdf/plugin-selection": "^1.5.0",
 		"@embedpdf/plugin-viewport": "^1.5.0",
 		"@embedpdf/plugin-zoom": "^1.5.0",
+		"@leeoniya/ufuzzy": "^1.0.19",
 		"@lucide/svelte": "^0.556.0",
 		"@skeletonlabs/skeleton": "^4.7.4",
 		"@skeletonlabs/skeleton-svelte": "^4.7.4",

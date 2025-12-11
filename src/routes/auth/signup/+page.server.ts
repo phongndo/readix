@@ -32,6 +32,6 @@ export const actions = {
 				lastname
 			});
 		}
-		throw redirect(303, '/dashboard');
+		throw redirect(303, '/library');
 	}
 } satisfies Actions;

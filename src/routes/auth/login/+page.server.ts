@@ -26,6 +26,6 @@ export const actions = {
 				email
 			});
 		}
-		throw redirect(303, '/dashboard');
+		throw redirect(303, '/library');
 	}
 } satisfies Actions;
