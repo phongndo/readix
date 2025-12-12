@@ -1,33 +1,12 @@
-import { Schema } from '@effect/schema';
-import type { User as SupabaseUser } from '@supabase/supabase-js';
-
-export type { Profile, NewProfile } from '$shared/api/db/schema';
-
-export const UpdateProfileSchema = Schema.Struct({
-	firstName: Schema.optional(
-		Schema.String.pipe(Schema.minLength(1, { message: () => 'First name is required' }))
-	),
-	lastName: Schema.optional(
-		Schema.String.pipe(Schema.minLength(1, { message: () => 'Last name is required' }))
-	),
-	avatarUrl: Schema.optional(Schema.NullOr(Schema.String))
+import { pgTable, uuid, text, timestamp } from 'drizzle-orm/pg-core';
+export const profiles = pgTable('profiles', {
+	id: uuid('id').primaryKey(),
+	firstName: text('first_name'),
+	lastName: text('last_name'),
+	avatarUrl: text('avatar_url'),
+	createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
+	updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow()
 });
-export type UpdateProfileInput = typeof UpdateProfileSchema.Type;
-export const decodeUpdateProfile = Schema.decodeUnknownEither(UpdateProfileSchema);
-
-export const AppUserSchema = Schema.Struct({
-	id: Schema.UUID,
-	email: Schema.String,
-	avatarUrl: Schema.NullOr(Schema.String),
-	createdAt: Schema.String
-});
-export type AppUser = typeof AppUserSchema.Type;
-
-export function toAppUser(user: SupabaseUser): AppUser {
-	return {
-		id: user.id,
-		email: user.email ?? '',
-		avatarUrl: user.user_metadata?.avatar_url ?? null,
-		createdAt: user.created_at
-	};
-}
+// Single source of truth for types
+export type Profile = typeof profiles.$inferSelect;
+export type NewProfile = typeof profiles.$inferInsert;

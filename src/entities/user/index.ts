@@ -1,1 +1,2 @@
-export * from './model/schemas';
+// User entity exports will be added during implementation
+export {};

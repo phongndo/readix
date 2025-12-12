@@ -1,15 +1,14 @@
 import { Schema } from '@effect/schema';
-import { PUBLIC_SUPABASE_URL, PUBLIC_SUPABASE_PUBLISHABLE_KEY } from '$env/static/public';
-import { DATABASE_URL } from '$env/static/private';
+import { DATABASE_URL, BETTER_AUTH_URL, BETTER_AUTH_SECRET } from '$env/static/private';
 // Schema definition
 const EnvSchema = Schema.Struct({
-	SUPABASE_URL: Schema.String.pipe(
-		Schema.filter((s) => URL.canParse(s), {
-			message: () => 'SUPABASE_URL must be a valid URL'
-		})
+	BETTER_AUTH_SECRET: Schema.String.pipe(
+		Schema.minLength(1, { message: () => 'BETTER_AUTH_SECRET is required' })
 	),
-	SUPABASE_PUBLISHABLE_KEY: Schema.String.pipe(
-		Schema.minLength(1, { message: () => 'SUPABASE_PUBLISHABLE_KEY is required' })
+	BETTER_AUTH_URL: Schema.String.pipe(
+		Schema.filter((s) => URL.canParse(s), {
+			message: () => 'BETTER_AUTH_URL must be a valid URL'
+		})
 	),
 	DATABASE_URL: Schema.String.pipe(
 		Schema.minLength(1, { message: () => 'DATABASE_URL is required' })
@@ -20,7 +19,7 @@ export type Env = typeof EnvSchema.Type;
 // Parse and validate (throws on error - acceptable at startup)
 const decodeEnv = Schema.decodeUnknownSync(EnvSchema);
 export const env: Env = decodeEnv({
-	SUPABASE_URL: PUBLIC_SUPABASE_URL,
-	SUPABASE_PUBLISHABLE_KEY: PUBLIC_SUPABASE_PUBLISHABLE_KEY,
+	BETTER_AUTH_SECRET: BETTER_AUTH_SECRET,
+	BETTER_AUTH_URL: BETTER_AUTH_URL,
 	DATABASE_URL: DATABASE_URL
 });
