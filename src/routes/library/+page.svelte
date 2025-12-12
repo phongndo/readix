@@ -1,4 +1,6 @@
-<script lang="ts">
+<script>
+    export let data;
 </script>
 
-<main></main>
+<h1>Database Version</h1>
+<p>{data.version}</p>
