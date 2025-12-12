@@ -3,20 +3,15 @@ import { vitePreprocess } from '@sveltejs/vite-plugin-svelte';
 
 /** @type {import('@sveltejs/kit').Config} */
 const config = {
+	// Consult https://svelte.dev/docs/kit/integrations
+	// for more information about preprocessors
 	preprocess: vitePreprocess(),
 	kit: {
-		adapter: adapter(),
-		alias: {
-			// FSD Layer aliases
-			$shared: 'src/shared',
-			'$shared/*': 'src/shared/*',
-			$entities: 'src/entities',
-			'$entities/*': 'src/entities/*',
-			$features: 'src/features',
-			'$features/*': 'src/features/*',
-			$widgets: 'src/widgets',
-			'$widgets/*': 'src/widgets/*'
-		}
+		// adapter-auto only supports some environments, see https://svelte.dev/docs/kit/adapter-auto for a list.
+		// If your environment is not supported, or you settled on a specific environment, switch out the adapter.
+		// See https://svelte.dev/docs/kit/adapters for more information about adapters.
+		adapter: adapter()
 	}
 };
+
 export default config;
