@@ -59,6 +59,7 @@
 	},
 	"dependencies": {
 		"@neondatabase/serverless": "^1.0.2",
+		"@vercel/analytics": "^1.6.1",
 		"effect": "^3.19.11",
 		"svelte-clerk": "^0.20.1"
 	}
