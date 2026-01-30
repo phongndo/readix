@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { SignedIn, SignedOut, RedirectToSignIn } from 'svelte-clerk';
+	import { SignedIn } from 'svelte-clerk';
 	import LibraryView from '$lib/features/library/LibraryView.svelte';
 	import ProgressStats from '$lib/features/progress/ProgressStats.svelte';
 	import AchievementsPanel from '$lib/features/progress/AchievementsPanel.svelte';
@@ -55,10 +55,6 @@
 		}
 	}
 </script>
-
-<SignedOut>
-	<RedirectToSignIn />
-</SignedOut>
 
 <SignedIn>
 	<div class="container mx-auto max-w-6xl p-4">

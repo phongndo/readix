@@ -1,7 +1,7 @@
 import { error } from '@sveltejs/kit';
 import { fetchBooksByUser } from '$lib/services/bookService';
 import { fetchUserStreak, fetchUserAchievements } from '$lib/services/progressService';
-import { AppRuntime } from '$lib/server/effect/runtime';
+import { AppRuntime } from '$lib/effect/runtime';
 import type { PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async ({ locals }) => {

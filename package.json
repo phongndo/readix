@@ -17,7 +17,6 @@
 		"test:e2e": "playwright test"
 	},
 	"devDependencies": {
-		"@convex-dev/auth": "^0.0.90",
 		"@eslint/compat": "^1.4.1",
 		"@eslint/js": "^9.39.2",
 		"@lucide/svelte": "^0.560.0",
@@ -55,6 +54,7 @@
 	"dependencies": {
 		"@vercel/analytics": "^1.6.1",
 		"convex": "^1.31.7",
+		"date-fns": "^4.1.0",
 		"effect": "^3.19.15",
 		"svelte-clerk": "^0.20.3"
 	}

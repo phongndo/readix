@@ -2,7 +2,7 @@ import { Option } from 'effect';
 import { browser } from '$app/environment';
 import { libraryStore } from '$lib/stores/libraryStore';
 import { fetchBooksByUser, createBook, deleteBook } from '$lib/services/bookService';
-import { AppRuntime } from '$lib/server/effect/runtime';
+import { AppRuntime } from '$lib/effect/runtime';
 import { type CreateBookInput } from '$lib/domain/book/Book';
 import type { AddBookFormData } from './library.types';
 

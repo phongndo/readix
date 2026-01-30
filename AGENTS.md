@@ -168,6 +168,63 @@ src/
 - Accept dependencies as parameters
 - No UI logic
 
+### Component Architecture (Google-Style)
+
+Strict atomic design with explicit hierarchy:
+
+```
+src/lib/components/
+├── atoms/              # Single-element primitives
+│   ├── button/
+│   ├── input/
+│   ├── label/
+│   ├── icon/
+│   └── text/
+├── molecules/          # 2-3 atoms combined
+│   ├── form-field/     # label + input + error
+│   ├── search-bar/     # input + button + icon
+│   └── stat-item/      # icon + number + label
+├── organisms/          # Complex UI sections
+│   ├── book-card/
+│   ├── contribution-calendar/
+│   └── stats-grid/
+└── templates/          # Page layouts
+    └── dashboard-layout/
+```
+
+**Rules:**
+
+1. **One component per file**
+   - No multiple exports from a single `.svelte` file
+   - No `index.ts` barrel files
+
+2. **Max 3 levels deep**
+   - ✅ `atoms/button/button-primary.svelte`
+   - ❌ `atoms/button/primary/large/outline.svelte`
+
+3. **Strict separation of concerns**
+   - **Atoms:** No business logic, no domain knowledge, props only
+   - **Molecules:** Combine atoms, layout only, no data fetching
+   - **Organisms:** May accept domain types as props, no stores
+   - **Templates:** Layout shells, slot-based
+   - **Features:** Own state, data fetching, business logic
+
+4. **Props as public API**
+   - Document all props with JSDoc
+   - No hidden behavior based on context
+   - Props interface named: `ComponentNameProps`
+
+5. **File naming**
+   - Folder: kebab-case (`form-field/`)
+   - File: matches folder name (`form-field.svelte`)
+   - Variants: descriptive suffix (`button-ghost.svelte`)
+
+6. **No cross-contamination**
+   - Atoms don't import from molecules, organisms, or features
+   - Molecules only import atoms
+   - Organisms import atoms and molecules
+   - Features import from all component levels
+
 ## Testing
 
 ### Test Types

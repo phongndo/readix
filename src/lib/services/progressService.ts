@@ -1,5 +1,5 @@
 import { Effect, Option } from 'effect';
-import { DatabaseError, type AppError } from '$lib/server/effect/errors';
+import { DatabaseError, type AppError } from '$lib/effect/errors';
 import { type Streak } from '$lib/domain/gamification/Achievement';
 import { convexClient } from '$lib/convex/client';
 import { api } from '$lib/convex/api';

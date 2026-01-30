@@ -1,6 +1,6 @@
 import { error } from '@sveltejs/kit';
 import { fetchBookById } from '$lib/services/bookService';
-import { AppRuntime } from '$lib/server/effect/runtime';
+import { AppRuntime } from '$lib/effect/runtime';
 import type { PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async ({ params, locals }) => {

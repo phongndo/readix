@@ -13,7 +13,7 @@ const gitignorePath = fileURLToPath(new URL('./.gitignore', import.meta.url));
 export default defineConfig(
 	includeIgnoreFile(gitignorePath),
 	{
-		ignores: ['src/lib/components/ui/**/*']
+		ignores: ['src/lib/components/ui/**/*', 'convex/_generated/**/*']
 	},
 	js.configs.recommended,
 	...ts.configs.recommended,

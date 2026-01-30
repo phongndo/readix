@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { SignedIn, SignedOut, RedirectToSignIn } from 'svelte-clerk';
+	import { SignedIn } from 'svelte-clerk';
 	import ReaderView from '$lib/features/reader/ReaderView.svelte';
 	import NewAchievementModal from '$lib/features/progress/NewAchievementModal.svelte';
 	import {
@@ -64,10 +64,6 @@
 		}
 	}
 </script>
-
-<SignedOut>
-	<RedirectToSignIn />
-</SignedOut>
 
 <SignedIn>
 	{#if data.book}

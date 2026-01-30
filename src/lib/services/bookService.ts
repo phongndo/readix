@@ -1,11 +1,6 @@
 import { Effect } from 'effect';
 import { CreateBookInput, BookId, UserId, type Book } from '$lib/domain/book/Book';
-import {
-	DatabaseError,
-	NotFoundError,
-	ValidationError,
-	type AppError
-} from '$lib/server/effect/errors';
+import { DatabaseError, NotFoundError, ValidationError, type AppError } from '$lib/effect/errors';
 import { calculateProgressPercentage } from '$lib/domain/book/bookRules';
 import { convexClient } from '$lib/convex/client';
 import { api } from '$lib/convex/api';

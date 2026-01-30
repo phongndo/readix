@@ -1,9 +1,9 @@
+import { Effect } from 'effect';
 import { browser } from '$app/environment';
 import { readingStore } from '$lib/stores/readingStore';
 import { libraryStore } from '$lib/stores/libraryStore';
 import { updateBookProgress } from '$lib/services/bookService';
 import { recordReadingSession, checkAndAwardAchievements } from '$lib/services/progressService';
-import { AppRuntime } from '$lib/server/effect/runtime';
 import type { Book } from '$lib/domain/book/Book';
 
 export function startReading(book: Book): void {
@@ -55,22 +55,16 @@ export async function saveProgress(userId: string): Promise<string[]> {
 	const bookIdNum = parseInt(bookId as unknown as string);
 
 	try {
-		const updateEffect = updateBookProgress(bookId as unknown as string, userId, endPage);
-		await AppRuntime(updateEffect);
+		// Execute Effects using runPromise (browser-safe)
+		await Effect.runPromise(updateBookProgress(bookId as unknown as string, userId, endPage));
 
 		if (endPage > startPage) {
-			const sessionEffect = recordReadingSession(
-				userId,
-				bookIdNum,
-				startPage,
-				endPage,
-				durationMinutes
+			await Effect.runPromise(
+				recordReadingSession(userId, bookIdNum, startPage, endPage, durationMinutes)
 			);
-			await AppRuntime(sessionEffect);
 		}
 
-		const achievementEffect = checkAndAwardAchievements(userId);
-		const newAchievements = await AppRuntime(achievementEffect);
+		const newAchievements = await Effect.runPromise(checkAndAwardAchievements(userId));
 
 		libraryStore.updateBook(bookId as unknown as string, { currentPage: endPage });
 
