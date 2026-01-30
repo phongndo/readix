@@ -11,9 +11,9 @@
 <script lang="ts">
 	let { activity = [], class: className }: ContributionCalendarProps = $props();
 
-	// Generate 52 weeks (GitHub shows 53 columns including partial first week)
+	// Generate 52 weeks of dates
 	const today = new Date();
-	const weeksToShow = 53;
+	const weeksToShow = 52;
 	const weeks: Date[][] = [];
 	let currentWeek: Date[] = [];
 
@@ -66,94 +66,86 @@
 	// Calculate total pages for stats
 	const totalPages = $derived(activity.reduce((sum, a) => sum + a.pages, 0));
 
-	// Calculate month positions aligned with week columns
-	const monthPositions = $derived(() => {
-		const positions: Array<{ weekIndex: number; label: string }> = [];
+	// Calculate which weeks should show month labels
+	const monthLabelWeeks = $derived(() => {
+		const labels: Array<{ index: number; label: string }> = [];
 		let lastMonth = -1;
 
-		weeks.forEach((week, weekIndex) => {
-			const firstDayOfWeek = week[0];
-			const currentMonth = getMonth(firstDayOfWeek);
-
-			if (currentMonth !== lastMonth) {
-				positions.push({ weekIndex, label: monthNames[currentMonth] });
-				lastMonth = currentMonth;
+		weeks.forEach((week, index) => {
+			const month = getMonth(week[0]);
+			if (month !== lastMonth) {
+				labels.push({ index, label: monthNames[month] });
+				lastMonth = month;
 			}
 		});
 
-		return positions;
+		return labels;
 	});
 </script>
 
 <CardContainer padding="lg" class={className}>
-	<!-- Stats Header -->
+	<!-- Header -->
 	<div class="mb-4 flex items-baseline justify-between">
 		<h3 class="text-lg font-semibold">Reading Activity</h3>
 		<span class="text-sm text-muted-foreground">{totalPages.toLocaleString()} pages this year</span>
 	</div>
 
-	<!-- Calendar Container -->
-	<div class="w-full overflow-x-auto pb-2">
-		<div class="min-w-max">
-			<!-- Month labels row - exactly aligned with week columns -->
-			<div class="flex text-xs text-muted-foreground mb-1">
-				<!-- Spacer for day labels -->
-				<div class="w-[28px] flex-shrink-0"></div>
-				<!-- Month labels positioned at exact week column boundaries -->
-				<div class="flex gap-[2px]">
-					{#each monthPositions() as { weekIndex, label }, i (i)}
-						<div
-							class="flex-shrink-0 text-left"
-							style="width: 10px; margin-left: {weekIndex > 0 ? `${weekIndex * 12}px` : '0'}"
-						>
-							{label}
-						</div>
-					{/each}
-				</div>
+	<!-- Calendar -->
+	<div class="w-full">
+		<!-- Month Labels -->
+		<div class="flex text-xs text-muted-foreground mb-1">
+			<div class="w-8 flex-shrink-0"></div>
+			<div
+				class="flex-1 grid"
+				style="grid-template-columns: repeat({weeks.length}, 1fr); gap: 2px;"
+			>
+				{#each monthLabelWeeks() as { index, label } (label)}
+					<div style="grid-column: {index + 1}">{label}</div>
+				{/each}
+			</div>
+		</div>
+
+		<!-- Grid with Day Labels -->
+		<div class="flex gap-1">
+			<!-- Day Labels -->
+			<div class="flex flex-col gap-1 text-xs text-muted-foreground w-8 flex-shrink-0">
+				<div class="h-3"></div>
+				<div class="h-3">Mon</div>
+				<div class="h-3"></div>
+				<div class="h-3">Wed</div>
+				<div class="h-3"></div>
+				<div class="h-3">Fri</div>
+				<div class="h-3"></div>
 			</div>
 
-			<!-- Main grid with day labels -->
-			<div class="flex gap-[2px]">
-				<!-- Day labels column -->
-				<div
-					class="flex flex-col gap-[2px] text-xs text-muted-foreground pr-2 w-[26px] flex-shrink-0"
-				>
-					<div class="h-[10px]"></div>
-					<div class="h-[10px] leading-[10px]">Mon</div>
-					<div class="h-[10px]"></div>
-					<div class="h-[10px] leading-[10px]">Wed</div>
-					<div class="h-[10px]"></div>
-					<div class="h-[10px] leading-[10px]">Fri</div>
-					<div class="h-[10px]"></div>
-				</div>
-
-				<!-- Calendar grid - flex layout matching GitHub exactly -->
-				<div class="flex gap-[2px]">
-					{#each weeks as week, weekIndex (weekIndex)}
-						<div class="flex flex-col gap-[2px] flex-shrink-0">
-							{#each week as day, dayIndex (`${weekIndex}-${dayIndex}`)}
-								{@const level = getActivityLevel(day)}
-								<div
-									class="w-[10px] h-[10px] rounded-sm {levelClasses[
-										level
-									]} transition-colors hover:ring-2 hover:ring-red-500/50 cursor-pointer flex-shrink-0"
-									title="{format(day, 'MMM d, yyyy')}: {activity.find((a) => isSameDay(a.date, day))
-										?.pages || 0} pages"
-								></div>
-							{/each}
-						</div>
+			<!-- Activity Grid - fills available width -->
+			<div
+				class="flex-1 grid"
+				style="grid-template-columns: repeat({weeks.length}, 1fr); grid-template-rows: repeat(7, 1fr); gap: 2px; aspect-ratio: {weeks.length} / 7;"
+			>
+				{#each weeks as week, weekIndex (weekIndex)}
+					{#each week as day, dayIndex (`${weekIndex}-${dayIndex}`)}
+						{@const level = getActivityLevel(day)}
+						<div
+							class="rounded-sm {levelClasses[
+								level
+							]} min-w-[8px] min-h-[8px] transition-colors hover:ring-2 hover:ring-red-500/50 cursor-pointer"
+							style="grid-column: {weekIndex + 1}; grid-row: {dayIndex + 1};"
+							title="{format(day, 'MMM d, yyyy')}: {activity.find((a) => isSameDay(a.date, day))
+								?.pages || 0} pages"
+						></div>
 					{/each}
-				</div>
+				{/each}
 			</div>
 		</div>
 	</div>
 
-	<!-- Legend - bottom right aligned -->
-	<div class="mt-3 flex items-center justify-end gap-2 text-xs text-muted-foreground">
+	<!-- Legend -->
+	<div class="mt-4 flex items-center justify-end gap-2 text-xs text-muted-foreground">
 		<span>Less</span>
-		<div class="flex gap-[2px]">
-			{#each levelClasses as cls, index (index)}
-				<div class="w-[10px] h-[10px] rounded-sm {cls}"></div>
+		<div class="flex gap-1">
+			{#each levelClasses as cls (cls)}
+				<div class="w-3 h-3 rounded-sm {cls}"></div>
 			{/each}
 		</div>
 		<span>More</span>
