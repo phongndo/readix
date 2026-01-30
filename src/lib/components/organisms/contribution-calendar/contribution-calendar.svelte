@@ -1,5 +1,5 @@
 <script lang="ts" module>
-	import { format, subDays, startOfWeek, addDays, isSameDay } from 'date-fns';
+	import { format, subDays, startOfWeek, addDays, isSameDay, getMonth } from 'date-fns';
 	import CardContainer from '$lib/components/atoms/card-container/card-container.svelte';
 
 	export interface ContributionCalendarProps {
@@ -47,7 +47,7 @@
 		'bg-primary'
 	];
 
-	const monthLabels = [
+	const monthNames = [
 		'Jan',
 		'Feb',
 		'Mar',
@@ -61,12 +61,26 @@
 		'Nov',
 		'Dec'
 	];
+
+	// Generate month labels aligned with weeks
+	const monthLabels = $derived(
+		weeks.map((week, index) => {
+			const firstDayOfWeek = week[0];
+			const month = getMonth(firstDayOfWeek);
+			// Only show month label if it's the first week of the month or first week
+			if (index === 0 || getMonth(weeks[index - 1][0]) !== month) {
+				return { label: monthNames[month], show: true };
+			}
+			return { label: '', show: false };
+		})
+	);
 </script>
 
 <CardContainer padding="lg" class={className}>
 	<h3 class="mb-4 text-lg font-semibold">Reading Activity</h3>
 
-	<div class="mb-2 flex items-center gap-2 text-xs text-muted-foreground">
+	<!-- Legend -->
+	<div class="mb-4 flex items-center justify-center gap-2 text-xs text-muted-foreground">
 		<span>Less</span>
 		<div class="flex gap-1">
 			{#each levelClasses as cls, index (index)}
@@ -76,45 +90,51 @@
 		<span>More</span>
 	</div>
 
-	<div class="overflow-x-auto">
-		<div class="inline-flex flex-col gap-1">
-			<!-- Month labels -->
-			<div class="flex gap-1 text-xs text-muted-foreground">
-				<div class="w-8"></div>
-				{#each monthLabels as month, i (i)}
-					{#if i % 2 === 0}
-						<div class="w-7">{month}</div>
-					{:else}
-						<div class="w-7"></div>
-					{/if}
+	<!-- Calendar Container -->
+	<div class="w-full overflow-x-auto">
+		<div class="mx-auto flex flex-col items-center gap-1 min-w-max">
+			<!-- Month labels row -->
+			<div class="flex gap-[3px] text-xs text-muted-foreground w-full">
+				<div class="w-6 flex-shrink-0"></div>
+				{#each monthLabels as { label, show }, i (i)}
+					<div class="flex-1 min-w-[12px] text-center" style="flex-basis: {show ? 'auto' : '0'}">
+						{#if show}
+							{label}
+						{/if}
+					</div>
 				{/each}
 			</div>
 
-			<div class="flex gap-1">
-				<!-- Day labels -->
-				<div class="flex flex-col gap-1 text-xs text-muted-foreground">
+			<!-- Main grid with day labels -->
+			<div class="flex gap-[3px]">
+				<!-- Day labels column -->
+				<div class="flex flex-col gap-[3px] text-xs text-muted-foreground pr-1">
 					<div class="h-3"></div>
-					<div class="h-3">Mon</div>
+					<div class="h-3 leading-3">Mon</div>
 					<div class="h-3"></div>
-					<div class="h-3">Wed</div>
+					<div class="h-3 leading-3">Wed</div>
 					<div class="h-3"></div>
-					<div class="h-3">Fri</div>
+					<div class="h-3 leading-3">Fri</div>
 					<div class="h-3"></div>
 				</div>
 
 				<!-- Calendar grid -->
-				{#each weeks as week, weekIndex (weekIndex)}
-					<div class="flex flex-col gap-1">
-						{#each week as day, dayIndex (`${weekIndex}-${dayIndex}`)}
-							{@const level = getActivityLevel(day)}
-							<div
-								class="h-3 w-3 rounded-sm {levelClasses[level]}"
-								title="{format(day, 'MMM d, yyyy')}: {activity.find((a) => isSameDay(a.date, day))
-									?.pages || 0} pages"
-							></div>
-						{/each}
-					</div>
-				{/each}
+				<div class="flex gap-[3px]">
+					{#each weeks as week, weekIndex (weekIndex)}
+						<div class="flex flex-col gap-[3px]">
+							{#each week as day, dayIndex (`${weekIndex}-${dayIndex}`)}
+								{@const level = getActivityLevel(day)}
+								<div
+									class="h-[10px] w-[10px] rounded-sm {levelClasses[
+										level
+									]} transition-colors hover:ring-2 hover:ring-primary/50"
+									title="{format(day, 'MMM d, yyyy')}: {activity.find((a) => isSameDay(a.date, day))
+										?.pages || 0} pages"
+								></div>
+							{/each}
+						</div>
+					{/each}
+				</div>
 			</div>
 		</div>
 	</div>
