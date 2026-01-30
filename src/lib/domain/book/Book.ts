@@ -10,7 +10,9 @@ export const BookSchema = Schema.Struct({
 	id: BookId,
 	userId: UserId,
 	title: Schema.String.pipe(Schema.minLength(1), Schema.maxLength(255)),
-	author: Schema.String.pipe(Schema.minLength(1), Schema.maxLength(255)),
+	author: Schema.optionalWith(Schema.String.pipe(Schema.minLength(1), Schema.maxLength(255)), {
+		default: () => 'Unknown Author'
+	}),
 	description: Schema.optionalWith(Schema.String, { default: () => '' }),
 	coverUrl: Schema.optionalWith(Schema.String, { default: () => '' }),
 	totalPages: Schema.Number.pipe(Schema.int(), Schema.positive()),
@@ -25,7 +27,9 @@ export type Book = typeof BookSchema.Type;
 
 export const CreateBookInput = Schema.Struct({
 	title: Schema.String.pipe(Schema.minLength(1), Schema.maxLength(255)),
-	author: Schema.String.pipe(Schema.minLength(1), Schema.maxLength(255)),
+	author: Schema.optionalWith(Schema.String.pipe(Schema.minLength(1), Schema.maxLength(255)), {
+		as: 'Option'
+	}),
 	description: Schema.optionalWith(Schema.String, { as: 'Option' }),
 	coverUrl: Schema.optionalWith(Schema.String, { as: 'Option' }),
 	totalPages: Schema.Number.pipe(Schema.int(), Schema.positive()),

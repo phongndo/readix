@@ -2,17 +2,34 @@
 	import { Plus } from '@lucide/svelte';
 	import Button from '$lib/components/atoms/button/button.svelte';
 	import BookGrid from '$lib/components/organisms/book-grid/book-grid.svelte';
-	import AddBookModal from './AddBookModal.svelte';
-	import type { LibraryViewProps } from './library.types';
+	import LibraryToolbar from '$lib/components/organisms/library-toolbar/library-toolbar.svelte';
+	import UploadModal from '$lib/components/organisms/upload-modal/upload-modal.svelte';
+	import EmptySearchState from '$lib/components/molecules/empty-search-state/empty-search-state.svelte';
 	import type { Book } from '$lib/domain/book/Book';
+	import { libraryStore, filteredBooks, filterCounts } from '$lib/stores/libraryStore';
 
-	let { books, isLoading, error }: LibraryViewProps = $props();
+	let {
+		books = [],
+		isLoading = false,
+		error = null
+	} = $props<{
+		books?: Book[];
+		isLoading?: boolean;
+		error?: string | null;
+	}>();
 
-	let showAddModal = $state(false);
-	let selectedBook = $state<Book | null>(null);
+	let showUploadModal = $state(false);
+
+	$effect(() => {
+		if (books.length > 0) {
+			libraryStore.setBooks(books);
+		}
+	});
 
 	function handleBookClick(book: Book) {
-		selectedBook = book;
+		// TODO: Track selected book state when reader navigation is implemented
+		// Navigate to reader
+		window.location.href = `/reader/${book.id}`;
 	}
 
 	function handleDeleteBook(book: Book) {
@@ -30,7 +47,7 @@
 	}
 
 	function handleAddBook() {
-		showAddModal = true;
+		showUploadModal = true;
 	}
 </script>
 
@@ -39,7 +56,7 @@
 		<div>
 			<h1 class="text-2xl font-bold">Your Library</h1>
 			<p class="text-sm text-muted-foreground">
-				{books.length} book{books.length === 1 ? '' : 's'}
+				{$filterCounts.all} book{$filterCounts.all === 1 ? '' : 's'}
 			</p>
 		</div>
 		<Button onclick={handleAddBook}>
@@ -48,18 +65,35 @@
 		</Button>
 	</div>
 
-	<BookGrid
-		{books}
-		{isLoading}
-		{error}
-		onAddBook={handleAddBook}
-		onBookClick={handleBookClick}
-		onBookDelete={handleDeleteBook}
+	<!-- Toolbar with search, filters, and sort -->
+	<LibraryToolbar
+		bind:searchQuery={$libraryStore.searchQuery}
+		resultCount={$filteredBooks.length}
+		activeFilter={$libraryStore.activeFilter}
+		filterCounts={$filterCounts}
+		sortBy={$libraryStore.sortBy}
+		viewMode={$libraryStore.viewMode}
+		onSearch={(q) => libraryStore.setSearchQuery(q)}
+		onFilterChange={(f) => libraryStore.setActiveFilter(f)}
+		onSortChange={(s) => libraryStore.setSortBy(s)}
+		onViewModeChange={(m) => libraryStore.setViewMode(m)}
 	/>
+
+	<!-- Book grid or empty state -->
+	{#if $libraryStore.searchQuery && $filteredBooks.length === 0}
+		<EmptySearchState
+			searchQuery={$libraryStore.searchQuery}
+			onClear={() => libraryStore.setSearchQuery('')}
+		/>
+	{:else}
+		<BookGrid
+			books={$filteredBooks}
+			{isLoading}
+			{error}
+			onBookClick={handleBookClick}
+			onBookDelete={handleDeleteBook}
+		/>
+	{/if}
 </div>
 
-<AddBookModal bind:open={showAddModal} />
-
-{#if selectedBook}
-	<!-- Navigate to reader -->
-{/if}
+<UploadModal bind:open={showUploadModal} />

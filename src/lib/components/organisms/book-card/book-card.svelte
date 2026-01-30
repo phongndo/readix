@@ -40,7 +40,9 @@
 		{/if}
 		<div class="flex flex-1 flex-col gap-1">
 			<h3 class="line-clamp-2 font-semibold leading-tight">{book.title}</h3>
-			<p class="text-sm text-muted-foreground">{book.author}</p>
+			{#if book.author && book.author !== 'Unknown Author'}
+				<p class="text-sm text-muted-foreground">{book.author}</p>
+			{/if}
 			{#if isCompleted}
 				<span
 					class="mt-auto inline-flex w-fit items-center rounded-full bg-red-500/10 px-2 py-0.5 text-xs font-medium text-red-500"

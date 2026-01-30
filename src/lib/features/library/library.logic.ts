@@ -27,7 +27,7 @@ export async function addBook(userId: string, formData: AddBookFormData): Promis
 
 	const input: CreateBookInput = {
 		title: formData.title,
-		author: formData.author,
+		author: formData.author ? Option.some(formData.author) : Option.none(),
 		description: formData.description ? Option.some(formData.description) : Option.none(),
 		coverUrl: formData.coverUrl ? Option.some(formData.coverUrl) : Option.none(),
 		totalPages: formData.totalPages,

@@ -7,7 +7,6 @@
 		books: Book[];
 		isLoading?: boolean;
 		error?: string | null;
-		onAddBook?: () => void;
 		onBookClick?: (book: Book) => void;
 		onBookDelete?: (book: Book) => void;
 		emptyState?: {
@@ -20,15 +19,13 @@
 </script>
 
 <script lang="ts">
-	import { Loader2, Plus } from '@lucide/svelte';
-	import Button from '$lib/components/atoms/button/button.svelte';
+	import { Loader2 } from '@lucide/svelte';
 	import BookCard from '$lib/components/organisms/book-card/book-card.svelte';
 
 	let {
 		books,
 		isLoading = false,
 		error = '',
-		onAddBook,
 		onBookClick,
 		onBookDelete,
 		emptyState = {
@@ -57,12 +54,6 @@
 				<h3 class="font-semibold">{emptyState.title}</h3>
 				<p class="text-sm text-muted-foreground">{emptyState.description}</p>
 			</div>
-			{#if onAddBook}
-				<Button onclick={onAddBook}>
-					<Plus class="mr-2 h-4 w-4" />
-					Add Book
-				</Button>
-			{/if}
 		</div>
 	{:else}
 		<div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">

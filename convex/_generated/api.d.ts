@@ -9,12 +9,16 @@
  */
 
 import type * as books from '../books.js';
+import type * as extraction from '../extraction.js';
+import type * as files from '../files.js';
 import type * as progress from '../progress.js';
 
 import type { ApiFromModules, FilterApi, FunctionReference } from 'convex/server';
 
 declare const fullApi: ApiFromModules<{
 	books: typeof books;
+	extraction: typeof extraction;
+	files: typeof files;
 	progress: typeof progress;
 }>;
 

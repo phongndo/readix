@@ -35,13 +35,14 @@
 		interactive: 'rounded-lg border bg-card transition-colors hover:bg-accent/50 cursor-pointer',
 		flat: 'rounded-lg bg-card'
 	};
+
+	const interactiveAttrs = $derived(onclick ? { role: 'button', tabindex: 0 } : {});
 </script>
 
 <div
 	class={cn(variantClasses[variant], paddingClasses[padding], className)}
 	{onclick}
-	role={onclick ? 'button' : undefined}
-	tabindex={onclick ? 0 : undefined}
+	{...interactiveAttrs}
 >
 	{@render children?.()}
 </div>

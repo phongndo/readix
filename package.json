@@ -14,7 +14,10 @@
 		"lint": "prettier --check . && eslint .",
 		"test:unit": "vitest",
 		"test": "npm run test:unit -- --run && npm run test:e2e",
-		"test:e2e": "playwright test"
+		"test:e2e": "playwright test",
+		"convex:dev": "convex dev",
+		"convex:deploy": "convex deploy",
+		"db:push": "convex dev --once"
 	},
 	"devDependencies": {
 		"@eslint/compat": "^1.4.1",
@@ -56,6 +59,7 @@
 		"convex": "^1.31.7",
 		"date-fns": "^4.1.0",
 		"effect": "^3.19.15",
+		"fuse.js": "^7.0.0",
 		"svelte-clerk": "^0.20.3"
 	}
 }

@@ -1,6 +1,5 @@
 import { error } from '@sveltejs/kit';
 import { fetchBooksByUser } from '$lib/services/bookService';
-import { fetchUserStreak, fetchUserAchievements } from '$lib/services/progressService';
 import { AppRuntime } from '$lib/effect/runtime';
 import type { PageServerLoad } from './$types';
 
@@ -12,18 +11,9 @@ export const load: PageServerLoad = async ({ locals }) => {
 		throw error(401, 'Unauthorized');
 	}
 
-	const [books, streak, achievements] = await Promise.all([
-		AppRuntime(fetchBooksByUser(userId)),
-		AppRuntime(fetchUserStreak(userId)),
-		AppRuntime(fetchUserAchievements(userId))
-	]);
+	const books = await AppRuntime(fetchBooksByUser(userId));
 
 	return {
-		books,
-		streak: {
-			current: streak?.currentStreak ?? 0,
-			longest: streak?.longestStreak ?? 0
-		},
-		achievements
+		books
 	};
 };

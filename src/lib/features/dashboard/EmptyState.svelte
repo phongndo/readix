@@ -1,8 +1,8 @@
 <script lang="ts">
-	import { BookOpen, Upload, FileText } from '@lucide/svelte';
+	import { Plus, BookOpen, FileText } from '@lucide/svelte';
 	import Button from '$lib/components/atoms/button/button.svelte';
 
-	let { onUpload }: { onUpload: () => void } = $props();
+	let { onAddBook }: { onAddBook: () => void } = $props();
 </script>
 
 <div class="rounded-lg border bg-card p-8 text-center">
@@ -17,9 +17,9 @@
 	</p>
 
 	<div class="flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
-		<Button size="lg" onclick={onUpload}>
-			<Upload class="mr-2 h-4 w-4" />
-			Upload Book
+		<Button size="lg" onclick={onAddBook}>
+			<Plus class="mr-2 h-4 w-4" />
+			Add Book
 		</Button>
 	</div>
 

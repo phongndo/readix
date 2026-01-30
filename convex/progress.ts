@@ -243,10 +243,36 @@ export const getStats = query({
 
 		if (!user) return null;
 
-		return await ctx.db
-			.query('userStats')
-			.withIndex('by_user', (q) => q.eq('userId', user._id))
-			.first();
+		const [stats, completedBooks] = await Promise.all([
+			ctx.db
+				.query('userStats')
+				.withIndex('by_user', (q) => q.eq('userId', user._id))
+				.first(),
+			ctx.db
+				.query('books')
+				.withIndex('by_completed', (q) => q.eq('userId', user._id).eq('isCompleted', true))
+				.collect()
+		]);
+
+		// Calculate totalBooksRead dynamically from completed books count
+		const totalBooksRead = completedBooks.length;
+
+		if (stats) {
+			return {
+				...stats,
+				totalBooksRead
+			};
+		}
+
+		// Return default stats for new users (no reading sessions yet)
+		return {
+			_id: null,
+			userId: user._id,
+			totalBooksRead,
+			totalPagesRead: 0,
+			totalReadingTime: 0,
+			updatedAt: Date.now()
+		};
 	}
 });
 

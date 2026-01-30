@@ -14,19 +14,40 @@ export default defineSchema({
 	books: defineTable({
 		userId: v.id('users'),
 		title: v.string(),
-		author: v.string(),
+		author: v.optional(v.string()),
 		description: v.optional(v.string()),
 		coverUrl: v.optional(v.string()),
 		totalPages: v.number(),
 		currentPage: v.number(),
-		content: v.string(),
+
+		// File storage fields
+		fileStorageId: v.optional(v.id('_storage')),
+		fileName: v.optional(v.string()),
+		fileType: v.optional(v.string()),
+		fileSize: v.optional(v.number()),
+
+		// Content now optional (loaded from file)
+		content: v.optional(v.string()),
+
+		// Document type classification
+		documentType: v.optional(
+			v.union(
+				v.literal('book'),
+				v.literal('research_paper'),
+				v.literal('article'),
+				v.literal('notes'),
+				v.literal('other')
+			)
+		),
+
 		isCompleted: v.boolean(),
 		createdAt: v.number(),
 		updatedAt: v.number()
 	})
 		.index('by_user', ['userId'])
 		.index('by_user_updated', ['userId', 'updatedAt'])
-		.index('by_completed', ['userId', 'isCompleted']),
+		.index('by_completed', ['userId', 'isCompleted'])
+		.index('by_user_document_type', ['userId', 'documentType']),
 
 	readingSessions: defineTable({
 		bookId: v.id('books'),
@@ -66,5 +87,21 @@ export default defineSchema({
 		totalPagesRead: v.number(),
 		totalReadingTime: v.number(),
 		updatedAt: v.number()
-	}).index('by_user', ['userId'])
+	}).index('by_user', ['userId']),
+
+	// Book content for extracted text and search indexing
+	bookContent: defineTable({
+		bookId: v.id('books'),
+		extractedText: v.string(),
+		extractionStatus: v.union(
+			v.literal('pending'),
+			v.literal('processing'),
+			v.literal('completed'),
+			v.literal('failed')
+		),
+		extractionError: v.optional(v.string()),
+		extractedAt: v.number()
+	})
+		.index('by_book', ['bookId'])
+		.index('by_status', ['extractionStatus'])
 });

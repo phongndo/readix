@@ -1,7 +1,5 @@
 <script lang="ts">
-	import { UserButton } from 'svelte-clerk';
-	import { BookOpen, ArrowLeft, Trophy, Clock, Calendar } from '@lucide/svelte';
-	import Button from '$lib/components/atoms/button/button.svelte';
+	import { Trophy, Clock, Calendar, BookOpen } from '@lucide/svelte';
 	import StatsGrid from '$lib/components/organisms/stats-grid/stats-grid.svelte';
 	import type { StatsGridItem } from '$lib/components/organisms/stats-grid/stats-grid.svelte';
 
@@ -37,23 +35,6 @@
 </script>
 
 <div class="min-h-screen bg-background">
-	<!-- Header -->
-	<header class="border-b bg-card">
-		<div class="container mx-auto flex h-14 items-center justify-between px-4">
-			<div class="flex items-center gap-4">
-				<Button variant="ghost" size="sm" href="/">
-					<ArrowLeft class="mr-2 h-4 w-4" />
-					Back
-				</Button>
-				<div class="flex items-center gap-2">
-					<BookOpen class="h-5 w-5" />
-					<span class="font-semibold">Profile</span>
-				</div>
-			</div>
-			<UserButton />
-		</div>
-	</header>
-
 	<!-- Main Content -->
 	<main class="container mx-auto px-4 py-8">
 		<div class="mx-auto max-w-4xl">

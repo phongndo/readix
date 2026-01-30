@@ -52,7 +52,6 @@ export async function saveProgress(userId: string): Promise<string[]> {
 	if (!sessionData) return [];
 
 	const { bookId, startPage, endPage, durationMinutes } = sessionData;
-	const bookIdNum = parseInt(bookId as unknown as string);
 
 	try {
 		// Execute Effects using runPromise (browser-safe)
@@ -60,7 +59,13 @@ export async function saveProgress(userId: string): Promise<string[]> {
 
 		if (endPage > startPage) {
 			await Effect.runPromise(
-				recordReadingSession(userId, bookIdNum, startPage, endPage, durationMinutes)
+				recordReadingSession(
+					userId,
+					bookId as unknown as string,
+					startPage,
+					endPage,
+					durationMinutes
+				)
 			);
 		}
 

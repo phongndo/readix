@@ -122,5 +122,11 @@
 	}
 	body {
 		@apply bg-background text-foreground;
+		/* Hide vertical scrollbar globally - content still scrollable */
+		scrollbar-width: none; /* Firefox */
+		-ms-overflow-style: none; /* IE/Edge */
+	}
+	body::-webkit-scrollbar {
+		display: none; /* Chrome, Safari, Opera */
 	}
 }

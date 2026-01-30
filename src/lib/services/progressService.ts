@@ -1,12 +1,16 @@
-import { Effect, Option } from 'effect';
+import { Effect, Option, Schema } from 'effect';
 import { DatabaseError, type AppError } from '$lib/effect/errors';
 import { type Streak } from '$lib/domain/gamification/Achievement';
 import { convexClient } from '$lib/convex/client';
-import { api } from '$lib/convex/api';
+import { api, type Id } from '$lib/convex/api';
+import { UserId } from '$lib/domain/book/Book';
+
+// Create branded StreakId using Effect Schema (same pattern as Achievement.ts)
+const StreakId = Schema.String.pipe(Schema.brand('StreakId'));
 
 export function recordReadingSession(
 	userId: string,
-	bookId: number,
+	bookId: string,
 	startPage: number,
 	endPage: number,
 	durationMinutes: number
@@ -15,7 +19,7 @@ export function recordReadingSession(
 		try: () =>
 			convexClient.mutation(api.progress.recordSession, {
 				userId,
-				bookId,
+				bookId: bookId as Id<'books'>,
 				startPage,
 				endPage,
 				durationMinutes
@@ -59,8 +63,8 @@ export function fetchUserStreak(userId: string): Effect.Effect<Streak | null, Ap
 		Effect.map((doc) =>
 			doc
 				? {
-						id: doc._id,
-						userId: doc.userId,
+						id: StreakId.make(doc._id),
+						userId: UserId.make(doc.userId),
 						currentStreak: doc.currentStreak,
 						longestStreak: doc.longestStreak,
 						lastReadAt: doc.lastReadAt ? Option.some(new Date(doc.lastReadAt)) : Option.none(),

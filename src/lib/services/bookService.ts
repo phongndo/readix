@@ -1,9 +1,9 @@
-import { Effect } from 'effect';
+import { Effect, Option } from 'effect';
 import { CreateBookInput, BookId, UserId, type Book } from '$lib/domain/book/Book';
 import { DatabaseError, NotFoundError, ValidationError, type AppError } from '$lib/effect/errors';
 import { calculateProgressPercentage } from '$lib/domain/book/bookRules';
 import { convexClient } from '$lib/convex/client';
-import { api } from '$lib/convex/api';
+import { api, type Id } from '$lib/convex/api';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function convexBookToDomain(doc: any): Book {
@@ -32,7 +32,7 @@ export function fetchBooksByUser(userId: string): Effect.Effect<Book[], AppError
 
 export function fetchBookById(bookId: string, userId: string): Effect.Effect<Book, AppError> {
 	return Effect.tryPromise({
-		try: () => convexClient.query(api.books.getById, { bookId, userId }),
+		try: () => convexClient.query(api.books.getById, { bookId: bookId as Id<'books'>, userId }),
 		catch: (error) => new DatabaseError('Failed to fetch book', error)
 	}).pipe(
 		Effect.flatMap((doc) =>
@@ -55,9 +55,9 @@ export function createBook(userId: string, input: CreateBookInput): Effect.Effec
 				convexClient.mutation(api.books.create, {
 					userId,
 					title: validated.title,
-					author: validated.author,
-					description: validated.description,
-					coverUrl: validated.coverUrl,
+					author: Option.getOrUndefined(validated.author),
+					description: Option.getOrUndefined(validated.description),
+					coverUrl: Option.getOrUndefined(validated.coverUrl),
 					totalPages: validated.totalPages,
 					content: validated.content
 				}),
@@ -86,7 +86,12 @@ export function updateBookProgress(
 		}
 
 		const updated = yield* Effect.tryPromise({
-			try: () => convexClient.mutation(api.books.updateProgress, { bookId, userId, newPage }),
+			try: () =>
+				convexClient.mutation(api.books.updateProgress, {
+					bookId: bookId as Id<'books'>,
+					userId,
+					newPage
+				}),
 			catch: (error) => new DatabaseError('Failed to update book progress', error)
 		});
 
@@ -96,11 +101,91 @@ export function updateBookProgress(
 
 export function deleteBook(bookId: string, userId: string): Effect.Effect<void, AppError> {
 	return Effect.tryPromise({
-		try: () => convexClient.mutation(api.books.remove, { bookId, userId }),
+		try: () => convexClient.mutation(api.books.remove, { bookId: bookId as Id<'books'>, userId }),
 		catch: (error) => new DatabaseError('Failed to delete book', error)
 	}).pipe(Effect.map(() => undefined));
 }
 
 export function getBookProgress(book: Book): number {
 	return calculateProgressPercentage(book);
+}
+
+/**
+ * Upload a book file and create a book record.
+ * This performs a 3-step process:
+ * 1. Get upload URL from Convex
+ * 2. Upload file directly to storage
+ * 3. Create book record with file metadata
+ */
+export function uploadBookWithFile(
+	userId: string,
+	file: File,
+	metadata: {
+		title: string;
+		author?: string;
+		description?: string;
+		coverUrl?: string;
+		documentType?: 'book' | 'research_paper' | 'article' | 'notes' | 'other';
+	}
+): Effect.Effect<Book, AppError> {
+	return Effect.gen(function* () {
+		// Step 1: Get upload URL
+		const uploadUrl = yield* Effect.tryPromise({
+			try: () => convexClient.mutation(api.files.generateUploadUrl, {}),
+			catch: (error) => new DatabaseError('Failed to generate upload URL', error)
+		});
+
+		// Step 2: Upload file directly to storage
+		const uploadResponse = yield* Effect.tryPromise({
+			try: async () => {
+				const response = await fetch(uploadUrl, {
+					method: 'POST',
+					headers: { 'Content-Type': file.type || 'application/octet-stream' },
+					body: file
+				});
+				if (!response.ok) {
+					throw new Error(`Upload failed: ${response.status}`);
+				}
+				const result = await response.json();
+				return result.storageId as Id<'_storage'>;
+			},
+			catch: (error) => new DatabaseError('Failed to upload file', error)
+		});
+
+		// Step 3: Create book record with file metadata
+		const bookId = yield* Effect.tryPromise({
+			try: () =>
+				convexClient.mutation(api.books.createWithFile, {
+					userId,
+					title: metadata.title,
+					author: metadata.author,
+					description: metadata.description,
+					coverUrl: metadata.coverUrl,
+					documentType: metadata.documentType,
+					fileStorageId: uploadResponse,
+					fileName: file.name,
+					fileType: file.type || 'application/octet-stream',
+					fileSize: file.size
+				}),
+			catch: (error) => new DatabaseError('Failed to create book record', error)
+		});
+
+		// Step 4: Trigger text extraction (async, don't wait)
+		effectIgnoreError(() =>
+			convexClient.action(api.extraction.extractTextFromFile, {
+				bookId,
+				storageId: uploadResponse,
+				fileType: file.type || 'application/octet-stream'
+			})
+		);
+
+		return yield* fetchBookById(bookId, userId);
+	});
+}
+
+// Helper to ignore errors in async operations
+function effectIgnoreError<T>(fn: () => Promise<T>): void {
+	fn().catch(() => {
+		// Ignore errors
+	});
 }

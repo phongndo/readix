@@ -99,7 +99,7 @@
 				class="flex-1 grid"
 				style="grid-template-columns: repeat({weeks.length}, 1fr); gap: 2px;"
 			>
-				{#each monthLabelWeeks() as { index, label } (label)}
+				{#each monthLabelWeeks() as { index, label } (index)}
 					<div style="grid-column: {index + 1}">{label}</div>
 				{/each}
 			</div>

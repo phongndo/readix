@@ -1,17 +1,31 @@
 import { writable, derived } from 'svelte/store';
 import type { Book } from '$lib/domain/book/Book';
+import { searchBooks } from '$lib/utils/fuzzySearch';
+
+type FilterType = 'all' | 'in-progress' | 'completed';
+type SortBy = 'updated' | 'title' | 'author' | 'progress';
+type ViewMode = 'grid' | 'list';
 
 type LibraryState = {
 	books: Book[];
 	isLoading: boolean;
 	error: string | null;
+	// Search and filter state
+	searchQuery: string;
+	activeFilter: FilterType;
+	sortBy: SortBy;
+	viewMode: ViewMode;
 };
 
 function createLibraryStore() {
 	const { subscribe, set, update } = writable<LibraryState>({
 		books: [],
 		isLoading: false,
-		error: null
+		error: null,
+		searchQuery: '',
+		activeFilter: 'all',
+		sortBy: 'updated',
+		viewMode: 'grid'
 	});
 
 	return {
@@ -30,11 +44,62 @@ function createLibraryStore() {
 				...s,
 				books: s.books.filter((b) => b.id !== bookId)
 			})),
-		reset: () => set({ books: [], isLoading: false, error: null })
+		// Search and filter actions
+		setSearchQuery: (query: string) => update((s) => ({ ...s, searchQuery: query })),
+		setActiveFilter: (filter: FilterType) => update((s) => ({ ...s, activeFilter: filter })),
+		setSortBy: (sort: SortBy) => update((s) => ({ ...s, sortBy: sort })),
+		setViewMode: (mode: ViewMode) => update((s) => ({ ...s, viewMode: mode })),
+		reset: () =>
+			set({
+				books: [],
+				isLoading: false,
+				error: null,
+				searchQuery: '',
+				activeFilter: 'all',
+				sortBy: 'updated',
+				viewMode: 'grid'
+			})
 	};
 }
 
 export const libraryStore = createLibraryStore();
+
+// Derived stores for filtering and sorting
+export const filteredBooks = derived(libraryStore, ($library) => {
+	let books = [...$library.books];
+
+	// Apply search
+	if ($library.searchQuery.trim()) {
+		books = searchBooks(books, $library.searchQuery);
+	}
+
+	// Apply filter
+	if ($library.activeFilter === 'in-progress') {
+		books = books.filter((b) => !b.isCompleted);
+	} else if ($library.activeFilter === 'completed') {
+		books = books.filter((b) => b.isCompleted);
+	}
+
+	// Apply sort
+	books.sort((a, b) => {
+		switch ($library.sortBy) {
+			case 'title':
+				return a.title.localeCompare(b.title);
+			case 'author':
+				return a.author.localeCompare(b.author);
+			case 'progress': {
+				const progressA = a.currentPage / a.totalPages;
+				const progressB = b.currentPage / b.totalPages;
+				return progressB - progressA;
+			}
+			case 'updated':
+			default:
+				return new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime();
+		}
+	});
+
+	return books;
+});
 
 export const completedBooks = derived(libraryStore, ($library) =>
 	$library.books.filter((b) => b.isCompleted)
@@ -43,3 +108,9 @@ export const completedBooks = derived(libraryStore, ($library) =>
 export const inProgressBooks = derived(libraryStore, ($library) =>
 	$library.books.filter((b) => !b.isCompleted)
 );
+
+export const filterCounts = derived(libraryStore, ($library) => ({
+	all: $library.books.length,
+	inProgress: $library.books.filter((b) => !b.isCompleted).length,
+	completed: $library.books.filter((b) => b.isCompleted).length
+}));
