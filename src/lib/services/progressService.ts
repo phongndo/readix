@@ -70,3 +70,48 @@ export function fetchUserStreak(userId: string): Effect.Effect<Streak | null, Ap
 		)
 	);
 }
+
+export interface UserStats {
+	totalBooksRead: number;
+	totalPagesRead: number;
+	totalReadingTime: number;
+}
+
+export function fetchUserStats(userId: string): Effect.Effect<UserStats, AppError> {
+	return Effect.tryPromise({
+		try: () => convexClient.query(api.progress.getStats, { userId }),
+		catch: (error) => new DatabaseError('Failed to fetch user stats', error)
+	}).pipe(
+		Effect.map((doc) =>
+			doc
+				? {
+						totalBooksRead: doc.totalBooksRead ?? 0,
+						totalPagesRead: doc.totalPagesRead ?? 0,
+						totalReadingTime: doc.totalReadingTime ?? 0
+					}
+				: { totalBooksRead: 0, totalPagesRead: 0, totalReadingTime: 0 }
+		)
+	);
+}
+
+export interface DailyActivity {
+	date: Date;
+	pages: number;
+}
+
+export function fetchActivityByDateRange(
+	userId: string,
+	days: number
+): Effect.Effect<DailyActivity[], AppError> {
+	return Effect.tryPromise({
+		try: () => convexClient.query(api.progress.getActivityByDateRange, { userId, days }),
+		catch: (error) => new DatabaseError('Failed to fetch activity data', error)
+	}).pipe(
+		Effect.map((docs) =>
+			docs.map((doc: { date: number; pages: number }) => ({
+				date: new Date(doc.date),
+				pages: doc.pages
+			}))
+		)
+	);
+}

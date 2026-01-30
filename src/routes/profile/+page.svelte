@@ -1,9 +1,39 @@
 <script lang="ts">
 	import { UserButton } from 'svelte-clerk';
 	import { BookOpen, ArrowLeft, Trophy, Clock, Calendar } from '@lucide/svelte';
-	import Button from '$lib/components/ui/button/button.svelte';
+	import Button from '$lib/components/atoms/button/button.svelte';
+	import StatsGrid from '$lib/components/organisms/stats-grid/stats-grid.svelte';
+	import type { StatsGridItem } from '$lib/components/organisms/stats-grid/stats-grid.svelte';
 
 	let { data } = $props();
+
+	const stats: StatsGridItem[] = $derived([
+		{
+			icon: Trophy,
+			value: data.achievements?.length || 0,
+			label: 'Achievements',
+			color: 'text-yellow-500'
+		},
+		{
+			icon: Clock,
+			value: Math.floor((data.stats?.totalReadingTime || 0) / 60),
+			label: 'Total Time',
+			suffix: 'h',
+			color: 'text-blue-500'
+		},
+		{
+			icon: Calendar,
+			value: data.streak?.longest || 0,
+			label: 'Best Streak',
+			color: 'text-green-500'
+		},
+		{
+			icon: BookOpen,
+			value: data.stats?.totalBooksRead || 0,
+			label: 'Completed',
+			color: 'text-primary'
+		}
+	]);
 </script>
 
 <div class="min-h-screen bg-background">
@@ -43,27 +73,8 @@
 			</div>
 
 			<!-- Stats Grid -->
-			<div class="mb-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-				<div class="rounded-lg border bg-card p-4">
-					<Trophy class="mb-2 h-5 w-5 text-yellow-500" />
-					<p class="text-2xl font-bold">{data.achievements?.length || 0}</p>
-					<p class="text-sm text-muted-foreground">Achievements</p>
-				</div>
-				<div class="rounded-lg border bg-card p-4">
-					<Clock class="mb-2 h-5 w-5 text-blue-500" />
-					<p class="text-2xl font-bold">{Math.floor((data.stats?.totalReadingTime || 0) / 60)}h</p>
-					<p class="text-sm text-muted-foreground">Total Time</p>
-				</div>
-				<div class="rounded-lg border bg-card p-4">
-					<Calendar class="mb-2 h-5 w-5 text-green-500" />
-					<p class="text-2xl font-bold">{data.streak?.longest || 0}</p>
-					<p class="text-sm text-muted-foreground">Best Streak</p>
-				</div>
-				<div class="rounded-lg border bg-card p-4">
-					<BookOpen class="mb-2 h-5 w-5 text-primary" />
-					<p class="text-2xl font-bold">{data.stats?.totalBooksRead || 0}</p>
-					<p class="text-sm text-muted-foreground">Completed</p>
-				</div>
+			<div class="mb-8">
+				<StatsGrid {stats} columns={4} />
 			</div>
 
 			<!-- Placeholder for more detailed stats -->

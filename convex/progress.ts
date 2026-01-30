@@ -143,7 +143,7 @@ async function checkAndAwardAchievementsInternal(ctx: any, userId: any) {
 	);
 	const minutesToday = todaySessions.reduce((sum: number, s: any) => sum + s.durationMinutes, 0);
 
-	const achievementsToAward = [];
+	const achievementsToAward: Array<{ name: string; description: string; icon: string }> = [];
 
 	if (completedBooks.length >= 1 && !unlockedNames.has('First Steps')) {
 		achievementsToAward.push({
@@ -247,5 +247,47 @@ export const getStats = query({
 			.query('userStats')
 			.withIndex('by_user', (q) => q.eq('userId', user._id))
 			.first();
+	}
+});
+
+export const getActivityByDateRange = query({
+	args: { userId: v.string(), days: v.number() },
+	handler: async (ctx, args) => {
+		const user = await ctx.db
+			.query('users')
+			.withIndex('by_clerk_id', (q) => q.eq('clerkId', args.userId))
+			.first();
+
+		if (!user) return [];
+
+		const cutoffDate = Date.now() - args.days * 24 * 60 * 60 * 1000;
+
+		const sessions = await ctx.db
+			.query('readingSessions')
+			.withIndex('by_user_created', (q) => q.eq('userId', user._id))
+			.filter((q) => q.gt(q.field('createdAt'), cutoffDate))
+			.order('desc')
+			.collect();
+
+		// Group by date and sum pages
+		const activityByDate = new Map();
+
+		for (const session of sessions) {
+			const date = new Date(session.createdAt);
+			const dateKey = new Date(date.getFullYear(), date.getMonth(), date.getDate()).getTime();
+			const pages = session.endPage - session.startPage;
+
+			if (activityByDate.has(dateKey)) {
+				activityByDate.set(dateKey, activityByDate.get(dateKey) + pages);
+			} else {
+				activityByDate.set(dateKey, pages);
+			}
+		}
+
+		// Convert to array format
+		return Array.from(activityByDate.entries()).map(([date, pages]) => ({
+			date,
+			pages
+		}));
 	}
 });

@@ -1,5 +1,6 @@
 import { query, mutation } from './_generated/server';
 import { v } from 'convex/values';
+import type { Id } from './_generated/dataModel';
 
 export const getByUser = query({
 	args: { userId: v.string() },
@@ -45,22 +46,26 @@ export const create = mutation({
 		content: v.string()
 	},
 	handler: async (ctx, args) => {
-		let user = await ctx.db
+		const user = await ctx.db
 			.query('users')
 			.withIndex('by_clerk_id', (q) => q.eq('clerkId', args.userId))
 			.first();
 
+		let userId: Id<'users'>;
+
 		if (!user) {
-			user = await ctx.db.insert('users', {
+			userId = await ctx.db.insert('users', {
 				clerkId: args.userId,
 				email: '',
 				createdAt: Date.now(),
 				updatedAt: Date.now()
 			});
+		} else {
+			userId = user._id;
 		}
 
 		const bookId = await ctx.db.insert('books', {
-			userId: user._id,
+			userId,
 			title: args.title,
 			author: args.author,
 			description: args.description,

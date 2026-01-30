@@ -1,7 +1,7 @@
 <script lang="ts">
-	import { Plus, Loader2 } from '@lucide/svelte';
-	import Button from '$lib/components/ui/button/button.svelte';
-	import BookCard from './BookCard.svelte';
+	import { Plus } from '@lucide/svelte';
+	import Button from '$lib/components/atoms/button/button.svelte';
+	import BookGrid from '$lib/components/organisms/book-grid/book-grid.svelte';
 	import AddBookModal from './AddBookModal.svelte';
 	import type { LibraryViewProps } from './library.types';
 	import type { Book } from '$lib/domain/book/Book';
@@ -48,41 +48,14 @@
 		</Button>
 	</div>
 
-	{#if isLoading}
-		<div class="flex items-center justify-center py-12">
-			<Loader2 class="h-8 w-8 animate-spin text-muted-foreground" />
-		</div>
-	{:else if error}
-		<div
-			class="rounded-lg border border-destructive/50 bg-destructive/10 p-4 text-center text-destructive"
-		>
-			{error}
-		</div>
-	{:else if books.length === 0}
-		<div class="flex flex-col items-center justify-center gap-4 py-12 text-center">
-			<div class="rounded-full bg-muted p-4">
-				<span class="text-4xl">📚</span>
-			</div>
-			<div>
-				<h3 class="font-semibold">No books yet</h3>
-				<p class="text-sm text-muted-foreground">Add your first book to start reading</p>
-			</div>
-			<Button onclick={handleAddBook}>
-				<Plus class="mr-2 h-4 w-4" />
-				Add Book
-			</Button>
-		</div>
-	{:else}
-		<div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-			{#each books as book (book.id)}
-				<BookCard
-					{book}
-					onClick={() => handleBookClick(book)}
-					onDelete={() => handleDeleteBook(book)}
-				/>
-			{/each}
-		</div>
-	{/if}
+	<BookGrid
+		{books}
+		{isLoading}
+		{error}
+		onAddBook={handleAddBook}
+		onBookClick={handleBookClick}
+		onBookDelete={handleDeleteBook}
+	/>
 </div>
 
 <AddBookModal bind:open={showAddModal} />

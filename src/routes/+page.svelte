@@ -1,27 +1,28 @@
 <script lang="ts">
-	import { UserButton } from 'svelte-clerk';
+	import { UserButton, useClerkContext } from 'svelte-clerk/client';
 	import { BookOpen, Bell } from '@lucide/svelte';
-	import Button from '$lib/components/ui/button/button.svelte';
+	import Button from '$lib/components/atoms/button/button.svelte';
 	import StatsCards from '$lib/features/dashboard/StatsCards.svelte';
-	import ContributionCalendar from '$lib/features/dashboard/ContributionCalendar.svelte';
+	import ContributionCalendar from '$lib/components/organisms/contribution-calendar/contribution-calendar.svelte';
 	import RecentBooks from '$lib/features/dashboard/RecentBooks.svelte';
 	import EmptyState from '$lib/features/dashboard/EmptyState.svelte';
+	import AddBookModal from '$lib/features/library/AddBookModal.svelte';
 	import { libraryStore } from '$lib/stores/libraryStore';
 	import { browser } from '$app/environment';
-	import { SvelteDate } from 'svelte/reactivity';
+	import * as bookService from '$lib/services/bookService';
+	import { Effect } from 'effect';
 
 	let { data } = $props();
 	let showAddModal = $state(false);
+	let isLoading = $state(false);
 
-	// Mock activity data for calendar (replace with real data)
-	const mockActivity = Array.from({ length: 100 }, (_, i) => {
-		const activityDate = new SvelteDate();
-		activityDate.setDate(activityDate.getDate() - i);
-		return {
-			date: activityDate,
-			pages: Math.random() > 0.7 ? Math.floor(Math.random() * 150) : 0
-		};
-	}).filter((a) => a.pages > 0);
+	const ctx = useClerkContext();
+	const user = $derived(ctx.user);
+	const firstName = $derived(user?.firstName || 'Reader');
+
+	// Use real activity data from server
+	// eslint-disable-next-line @typescript-eslint/no-explicit-any
+	const activity = $derived(((data as any).activity as Array<{ date: Date; pages: number }>) || []);
 
 	$effect(() => {
 		if (browser && data.books) {
@@ -32,6 +33,46 @@
 	function handleUpload() {
 		showAddModal = true;
 	}
+
+	async function handleAddBook(event: CustomEvent) {
+		const formData = event.detail;
+		isLoading = true;
+
+		try {
+			if (user?.id) {
+				await Effect.runPromise(
+					bookService.createBook(user.id, {
+						title: formData.title,
+						author: formData.author,
+						description: formData.description,
+						totalPages: formData.totalPages,
+						content: formData.content,
+						coverUrl: formData.coverUrl
+					})
+				);
+				// Refresh the page to get updated data
+				window.location.reload();
+			}
+		} catch (error) {
+			console.error('Failed to add book:', error);
+			alert('Failed to add book. Please try again.');
+		} finally {
+			isLoading = false;
+			showAddModal = false;
+		}
+	}
+
+	// Listen for addbook event
+	$effect(() => {
+		if (!browser) return;
+
+		const handler = (e: Event) => handleAddBook(e as CustomEvent);
+		document.addEventListener('addbook', handler);
+
+		return () => {
+			document.removeEventListener('addbook', handler);
+		};
+	});
 </script>
 
 <div class="min-h-screen bg-background">
@@ -56,7 +97,13 @@
 	<main class="container mx-auto px-4 py-6">
 		<!-- Welcome -->
 		<div class="mb-6">
-			<h1 class="text-2xl font-bold">Welcome back</h1>
+			<h1 class="text-2xl font-bold">
+				{#if isLoading}
+					Loading...
+				{:else}
+					Welcome back, {firstName}
+				{/if}
+			</h1>
 			<p class="text-muted-foreground">Track your reading progress and build your streak</p>
 		</div>
 
@@ -73,7 +120,7 @@
 
 		<!-- Activity Calendar -->
 		<div class="mb-6">
-			<ContributionCalendar activity={mockActivity} />
+			<ContributionCalendar {activity} />
 		</div>
 
 		<!-- Books Section -->
@@ -84,8 +131,7 @@
 		{/if}
 	</main>
 </div>
-
-<!-- Add Book Modal would go here -->
+<!-- Add Book Modal -->
 {#if showAddModal}
-	<!-- Import and use AddBookModal -->
+	<AddBookModal bind:open={showAddModal} />
 {/if}

@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { X } from '@lucide/svelte';
-	import Button from '$lib/components/ui/button/button.svelte';
+	import Button from '$lib/components/atoms/button/button.svelte';
+	import FormField from '$lib/components/molecules/form-field/form-field.svelte';
 	import type { AddBookFormData } from './library.types';
 
 	let { open = $bindable(false) }: { open: boolean } = $props();
@@ -68,83 +69,76 @@
 			</div>
 
 			<form onsubmit={handleSubmit} class="flex flex-col gap-4">
-				<div class="grid gap-2">
-					<label for="title" class="text-sm font-medium">
-						Title <span class="text-destructive">*</span>
-					</label>
-					<input
-						id="title"
-						type="text"
-						bind:value={title}
-						class="rounded-md border bg-background px-3 py-2 text-sm"
-						placeholder="Enter book title"
-					/>
-				</div>
+				<FormField
+					label="Title"
+					name="title"
+					type="text"
+					value={title}
+					placeholder="Enter book title"
+					required={true}
+					oninput={(v) => (title = v)}
+				/>
 
-				<div class="grid gap-2">
-					<label for="author" class="text-sm font-medium">
-						Author <span class="text-destructive">*</span>
-					</label>
-					<input
-						id="author"
-						type="text"
-						bind:value={author}
-						class="rounded-md border bg-background px-3 py-2 text-sm"
-						placeholder="Enter author name"
-					/>
-				</div>
+				<FormField
+					label="Author"
+					name="author"
+					type="text"
+					value={author}
+					placeholder="Enter author name"
+					required={true}
+					oninput={(v) => (author = v)}
+				/>
 
 				<div class="grid gap-2">
 					<label for="pages" class="text-sm font-medium">
-						Total Pages <span class="text-destructive">*</span>
+						Total Pages <span class="text-red-500">*</span>
 					</label>
 					<input
 						id="pages"
 						type="number"
-						bind:value={totalPages}
+						value={totalPages}
 						min="1"
-						class="rounded-md border bg-background px-3 py-2 text-sm"
+						class="w-full rounded-md border border-neutral-700 bg-background px-3 py-2 text-sm focus:border-red-500 focus:outline-none focus:ring-1 focus:ring-red-500"
 						placeholder="Number of pages"
+						oninput={(e) => (totalPages = parseInt(e.currentTarget.value) || 0)}
 					/>
 				</div>
 
-				<div class="grid gap-2">
-					<label for="description" class="text-sm font-medium">Description</label>
-					<textarea
-						id="description"
-						bind:value={description}
-						rows="2"
-						class="rounded-md border bg-background px-3 py-2 text-sm resize-none"
-						placeholder="Brief description (optional)"
-					></textarea>
-				</div>
+				<FormField
+					label="Description"
+					name="description"
+					type="textarea"
+					value={description}
+					placeholder="Brief description (optional)"
+					rows={2}
+					oninput={(v) => (description = v)}
+				/>
 
 				<div class="grid gap-2">
 					<label for="cover" class="text-sm font-medium">Cover URL</label>
 					<input
 						id="cover"
 						type="url"
-						bind:value={coverUrl}
-						class="rounded-md border bg-background px-3 py-2 text-sm"
+						value={coverUrl}
+						class="w-full rounded-md border border-neutral-700 bg-background px-3 py-2 text-sm focus:border-red-500 focus:outline-none focus:ring-1 focus:ring-red-500"
 						placeholder="https://example.com/cover.jpg"
+						oninput={(e) => (coverUrl = e.currentTarget.value)}
 					/>
 				</div>
 
-				<div class="grid gap-2">
-					<label for="content" class="text-sm font-medium">
-						Content <span class="text-destructive">*</span>
-					</label>
-					<textarea
-						id="content"
-						bind:value={content}
-						rows="6"
-						class="rounded-md border bg-background px-3 py-2 text-sm resize-none font-mono text-xs"
-						placeholder="Paste book content here..."
-					></textarea>
-				</div>
+				<FormField
+					label="Content"
+					name="content"
+					type="textarea"
+					value={content}
+					placeholder="Paste book content here..."
+					required={true}
+					rows={6}
+					oninput={(v) => (content = v)}
+				/>
 
 				{#if error}
-					<p class="text-sm text-destructive">{error}</p>
+					<p class="text-sm text-red-500">{error}</p>
 				{/if}
 
 				<div class="flex justify-end gap-2 pt-2">

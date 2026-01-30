@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { UserButton } from 'svelte-clerk';
 	import { BookOpen, ArrowLeft, Maximize2 } from '@lucide/svelte';
-	import Button from '$lib/components/ui/button/button.svelte';
+	import Button from '$lib/components/atoms/button/button.svelte';
 </script>
 
 <div class="min-h-screen bg-background">

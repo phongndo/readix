@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { BookOpen, Upload, FileText } from '@lucide/svelte';
-	import Button from '$lib/components/ui/button/button.svelte';
+	import Button from '$lib/components/atoms/button/button.svelte';
 
 	let { onUpload }: { onUpload: () => void } = $props();
 </script>

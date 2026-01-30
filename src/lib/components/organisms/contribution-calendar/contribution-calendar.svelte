@@ -1,7 +1,15 @@
-<script lang="ts">
+<script lang="ts" module>
 	import { format, subDays, startOfWeek, addDays, isSameDay } from 'date-fns';
+	import CardContainer from '$lib/components/atoms/card-container/card-container.svelte';
 
-	let { activity = [] }: { activity: Array<{ date: Date; pages: number }> } = $props();
+	export interface ContributionCalendarProps {
+		activity: Array<{ date: Date; pages: number }>;
+		class?: string;
+	}
+</script>
+
+<script lang="ts">
+	let { activity = [], class: className }: ContributionCalendarProps = $props();
 
 	// Generate 52 weeks of dates
 	const today = new Date();
@@ -55,7 +63,7 @@
 	];
 </script>
 
-<div class="rounded-lg border bg-card p-6">
+<CardContainer padding="lg" class={className}>
 	<h3 class="mb-4 text-lg font-semibold">Reading Activity</h3>
 
 	<div class="mb-2 flex items-center gap-2 text-xs text-muted-foreground">
@@ -110,4 +118,4 @@
 			</div>
 		</div>
 	</div>
-</div>
+</CardContainer>
