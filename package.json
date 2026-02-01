@@ -61,6 +61,8 @@
 		"date-fns": "^4.1.0",
 		"effect": "^3.19.15",
 		"fuse.js": "^7.0.0",
-		"svelte-clerk": "^0.20.3"
+		"pdfjs-dist": "^5.4.530",
+		"svelte-clerk": "^0.20.3",
+		"svelte-tiny-virtual-list": "^3.0.1"
 	}
 }

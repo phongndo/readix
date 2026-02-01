@@ -19,6 +19,11 @@ export const BookSchema = Schema.Struct({
 	currentPage: Schema.Number.pipe(Schema.int(), Schema.nonNegative()),
 	content: Schema.String,
 	isCompleted: Schema.Boolean,
+	// File storage fields for PDF/EPUB support
+	fileStorageId: Schema.optionalWith(Schema.String, { as: 'Option' }),
+	fileName: Schema.optionalWith(Schema.String, { as: 'Option' }),
+	fileType: Schema.optionalWith(Schema.String, { as: 'Option' }),
+	fileSize: Schema.optionalWith(Schema.Number, { as: 'Option' }),
 	createdAt: Schema.DateFromNumber,
 	updatedAt: Schema.DateFromNumber
 });

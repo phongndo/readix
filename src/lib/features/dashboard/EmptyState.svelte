@@ -12,8 +12,8 @@
 
 	<h3 class="mb-2 text-xl font-semibold">Start Your Reading Journey</h3>
 	<p class="mx-auto mb-6 max-w-md text-muted-foreground">
-		Your library is empty. Upload PDFs, EPUBs, or paste text to begin tracking your reading progress
-		and building your streak.
+		Your library is empty. Upload PDFs to begin tracking your reading progress and building your
+		streak.
 	</p>
 
 	<div class="flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
@@ -27,14 +27,6 @@
 		<div class="flex items-center gap-1">
 			<FileText class="h-3 w-3" />
 			<span>PDF</span>
-		</div>
-		<div class="flex items-center gap-1">
-			<FileText class="h-3 w-3" />
-			<span>EPUB</span>
-		</div>
-		<div class="flex items-center gap-1">
-			<FileText class="h-3 w-3" />
-			<span>TXT</span>
 		</div>
 	</div>
 </div>

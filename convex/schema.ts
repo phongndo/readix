@@ -47,7 +47,8 @@ export default defineSchema({
 		.index('by_user', ['userId'])
 		.index('by_user_updated', ['userId', 'updatedAt'])
 		.index('by_completed', ['userId', 'isCompleted'])
-		.index('by_user_document_type', ['userId', 'documentType']),
+		.index('by_user_document_type', ['userId', 'documentType'])
+		.index('by_storage_id', ['fileStorageId']),
 
 	readingSessions: defineTable({
 		bookId: v.id('books'),
@@ -103,5 +104,78 @@ export default defineSchema({
 		extractedAt: v.number()
 	})
 		.index('by_book', ['bookId'])
-		.index('by_status', ['extractionStatus'])
+		.index('by_status', ['extractionStatus']),
+
+	// PDF/Document reading positions
+	readingPositions: defineTable({
+		bookId: v.id('books'),
+		userId: v.id('users'),
+		format: v.union(v.literal('pdf'), v.literal('epub'), v.literal('text')),
+		page: v.number(),
+		scrollOffset: v.number(),
+		timestamp: v.number()
+	})
+		.index('by_book_user', ['bookId', 'userId'])
+		.index('by_user', ['userId']),
+
+	// Bookmarks for quick navigation
+	bookmarks: defineTable({
+		bookId: v.id('books'),
+		userId: v.id('users'),
+		page: v.number(),
+		title: v.string(),
+		color: v.optional(
+			v.union(
+				v.literal('yellow'),
+				v.literal('green'),
+				v.literal('blue'),
+				v.literal('pink'),
+				v.literal('purple')
+			)
+		),
+		createdAt: v.number()
+	})
+		.index('by_book_user', ['bookId', 'userId'])
+		.index('by_book_page', ['bookId', 'page']),
+
+	// Annotations (highlights and notes)
+	annotations: defineTable({
+		bookId: v.id('books'),
+		userId: v.id('users'),
+		type: v.union(v.literal('highlight'), v.literal('note')),
+		page: v.number(),
+		position: v.object({
+			startOffset: v.number(),
+			endOffset: v.number(),
+			boundingBoxes: v.array(
+				v.object({
+					x: v.number(),
+					y: v.number(),
+					width: v.number(),
+					height: v.number()
+				})
+			)
+		}),
+		highlightedText: v.string(),
+		note: v.optional(v.string()),
+		color: v.string(),
+		createdAt: v.number(),
+		updatedAt: v.number()
+	})
+		.index('by_book_user', ['bookId', 'userId'])
+		.index('by_book_page', ['bookId', 'page']),
+
+	// Extracted text for search
+	documentText: defineTable({
+		bookId: v.id('books'),
+		page: v.number(),
+		text: v.string(),
+		wordCount: v.number(),
+		createdAt: v.number()
+	})
+		.index('by_book', ['bookId'])
+		.index('by_book_page', ['bookId', 'page'])
+		.searchIndex('search_text', {
+			searchField: 'text'
+		})
 });

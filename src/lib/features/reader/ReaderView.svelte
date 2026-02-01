@@ -1,17 +1,21 @@
 <script lang="ts">
-	import { ChevronLeft, ChevronRight } from '@lucide/svelte';
+	import { ChevronLeft } from '@lucide/svelte';
 	import Button from '$lib/components/ui/button/button.svelte';
 	import Tooltip from '$lib/components/ui/tooltip/tooltip.svelte';
+	import PdfViewer from '$lib/features/reader/components/pdf-viewer/pdf-viewer.svelte';
+	import { page } from '$app/state';
 	import type { ReaderViewProps } from './reader.types';
 	import { calculateProgressPercentage } from '$lib/domain/book/bookRules';
 
 	let { book }: ReaderViewProps = $props();
 
+	// Determine if this is a PDF file or text content
+	const hasFile = $derived(book.fileStorageId != null);
+	const fileUrl = $derived(hasFile ? `/api/files/${book.fileStorageId}` : null);
+
 	let currentPage = $derived(book.currentPage);
 
 	const progress = $derived(calculateProgressPercentage({ ...book, currentPage }));
-	const canGoPrevious = $derived(currentPage > 0);
-	const canGoNext = $derived(currentPage < book.totalPages - 1);
 
 	const contentChunks = $derived(book.content.split('\n\n'));
 	const pages = $derived(
@@ -27,37 +31,6 @@
 			chunks.push(array.slice(i, i + chunkSize));
 		}
 		return chunks;
-	}
-
-	function goToPrevious() {
-		if (canGoPrevious) {
-			currentPage--;
-			dispatchPageUpdate();
-		}
-	}
-
-	function goToNext() {
-		if (canGoNext) {
-			currentPage++;
-			dispatchPageUpdate();
-		}
-	}
-
-	function dispatchPageUpdate() {
-		const event = new CustomEvent('pagechange', {
-			detail: { page: currentPage },
-			bubbles: true
-		});
-		document.dispatchEvent(event);
-	}
-
-	function handleJumpToPage(e: Event) {
-		const input = e.target as HTMLInputElement;
-		const page = parseInt(input.value) - 1;
-		if (page >= 0 && page < book.totalPages) {
-			currentPage = page;
-			dispatchPageUpdate();
-		}
 	}
 
 	function handleExit() {
@@ -96,52 +69,24 @@
 	</div>
 
 	<!-- Reading area -->
-	<main class="flex-1 overflow-y-auto p-6 md:p-8">
-		<article class="mx-auto max-w-2xl leading-relaxed">
-			{#each currentContent as paragraph, index (index)}
-				<p class="mb-4 text-lg">{paragraph}</p>
-			{/each}
-		</article>
-	</main>
-
-	<!-- Footer controls -->
-	<footer class="border-t px-4 py-3">
-		<div class="mx-auto flex max-w-2xl items-center justify-between gap-4">
-			<Tooltip content="Previous page (←)" position="top">
-				{#snippet children({ props })}
-					<Button
-						{...props}
-						variant="outline"
-						size="sm"
-						disabled={!canGoPrevious}
-						onclick={goToPrevious}
-					>
-						<ChevronLeft class="mr-1 h-4 w-4" />
-						Previous
-					</Button>
-				{/snippet}
-			</Tooltip>
-
-			<div class="flex items-center gap-2">
-				<span class="text-sm text-muted-foreground">Go to page:</span>
-				<input
-					type="number"
-					min="1"
-					max={book.totalPages}
-					value={currentPage + 1}
-					onchange={handleJumpToPage}
-					class="w-16 rounded-md border bg-background px-2 py-1 text-center text-sm"
-				/>
+	<main class="flex-1 overflow-hidden">
+		{#if hasFile && fileUrl && page.data.userId}
+			<PdfViewer
+				bookId={book.id}
+				userId={page.data.userId}
+				title={book.title}
+				author={book.author}
+				{fileUrl}
+				totalPages={book.totalPages}
+			/>
+		{:else}
+			<div class="h-full overflow-y-auto p-6 md:p-8">
+				<article class="mx-auto max-w-2xl leading-relaxed">
+					{#each currentContent as paragraph, index (index)}
+						<p class="mb-4 text-lg">{paragraph}</p>
+					{/each}
+				</article>
 			</div>
-
-			<Tooltip content="Next page (→)" position="top">
-				{#snippet children({ props })}
-					<Button {...props} variant="outline" size="sm" disabled={!canGoNext} onclick={goToNext}>
-						Next
-						<ChevronRight class="ml-1 h-4 w-4" />
-					</Button>
-				{/snippet}
-			</Tooltip>
-		</div>
-	</footer>
+		{/if}
+	</main>
 </div>

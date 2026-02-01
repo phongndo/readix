@@ -18,6 +18,11 @@ function convexBookToDomain(doc: any): Book {
 		currentPage: doc.currentPage,
 		content: doc.content,
 		isCompleted: doc.isCompleted,
+		// File fields
+		fileStorageId: doc.fileStorageId ?? undefined,
+		fileName: doc.fileName ?? undefined,
+		fileType: doc.fileType ?? undefined,
+		fileSize: doc.fileSize ?? undefined,
 		createdAt: new Date(doc.createdAt),
 		updatedAt: new Date(doc.updatedAt)
 	};

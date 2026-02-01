@@ -1,6 +1,5 @@
 <script lang="ts">
-	import { X, Upload, FileText } from '@lucide/svelte';
-	import { Tabs } from 'bits-ui';
+	import { X, FileText } from '@lucide/svelte';
 	import * as Dialog from '$lib/components/ui/dialog/dialog.svelte';
 	import DialogHeader from '$lib/components/ui/dialog/dialog-header.svelte';
 	import Button from '$lib/components/ui/button/button.svelte';
@@ -19,7 +18,6 @@
 
 	let { open = $bindable(false) }: { open: boolean } = $props();
 
-	let activeTab = $state<'upload' | 'manual'>('upload');
 	let selectedFile = $state<File | null>(null);
 	let uploadProgress = $state(0);
 	let isUploading = $state(false);
@@ -44,56 +42,34 @@
 	function handleSubmit(e: Event) {
 		e.preventDefault();
 
-		if (activeTab === 'upload') {
-			if (!selectedFile) {
-				error = 'Please select a file to upload';
-				return;
-			}
-			if (!title) {
-				error = 'Please provide a title';
-				return;
-			}
-
-			const formData: UploadFormData = {
-				file: selectedFile,
-				title,
-				author: author || undefined,
-				description: description || undefined,
-				coverUrl: coverUrl || undefined
-			};
-
-			const event = new CustomEvent('uploadbook', {
-				detail: formData,
-				bubbles: true
-			});
-			document.dispatchEvent(event);
-		} else {
-			// Manual entry
-			if (!title) {
-				error = 'Please provide a title';
-				return;
-			}
-
-			const formData: UploadFormData = {
-				title,
-				author: author || undefined,
-				description: description || undefined,
-				coverUrl: coverUrl || undefined
-			};
-
-			const event = new CustomEvent('addbook', {
-				detail: formData,
-				bubbles: true
-			});
-			document.dispatchEvent(event);
+		if (!selectedFile) {
+			error = 'Please select a PDF file to upload';
+			return;
 		}
+		if (!title) {
+			error = 'Please provide a title';
+			return;
+		}
+
+		const formData: UploadFormData = {
+			file: selectedFile,
+			title,
+			author: author || undefined,
+			description: description || undefined,
+			coverUrl: coverUrl || undefined
+		};
+
+		const event = new CustomEvent('uploadbook', {
+			detail: formData,
+			bubbles: true
+		});
+		document.dispatchEvent(event);
 
 		open = false;
 		resetForm();
 	}
 
 	function resetForm() {
-		activeTab = 'upload';
 		selectedFile = null;
 		uploadProgress = 0;
 		isUploading = false;
@@ -127,137 +103,104 @@
 				</Dialog.Close>
 			</DialogHeader>
 
-			<!-- Tabs -->
-			<Tabs.Root
-				value={activeTab}
-				onValueChange={(v) => (activeTab = v as 'upload' | 'manual')}
-				class="mt-4"
-			>
-				<Tabs.List class="flex gap-2 mb-6">
-					<Tabs.Trigger
-						value="upload"
-						class="flex-1 rounded-md py-2 text-sm font-medium data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=inactive]:bg-muted data-[state=inactive]:text-muted-foreground data-[state=inactive]:hover:bg-muted/80"
-					>
-						<Upload class="inline h-4 w-4 mr-1" />
-						Upload File
-					</Tabs.Trigger>
-					<Tabs.Trigger
-						value="manual"
-						class="flex-1 rounded-md py-2 text-sm font-medium data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=inactive]:bg-muted data-[state=inactive]:text-muted-foreground data-[state=inactive]:hover:bg-muted/80"
-					>
-						Manual Entry
-					</Tabs.Trigger>
-				</Tabs.List>
-
-				<form onsubmit={handleSubmit} class="flex flex-col gap-4">
-					<!-- File Upload Tab -->
-					<Tabs.Content value="upload">
-						{#if selectedFile}
-							<div class="rounded-lg border bg-muted p-4">
-								<div class="flex items-center justify-between">
-									<div class="flex items-center gap-3">
-										<div class="rounded bg-background p-2">
-											<FileText class="h-5 w-5 text-muted-foreground" />
-										</div>
-										<div>
-											<p class="font-medium text-sm">{selectedFile.name}</p>
-											<p class="text-xs text-muted-foreground">
-												{(selectedFile.size / 1024 / 1024).toFixed(2)} MB
-											</p>
-										</div>
-									</div>
-									<button
-										type="button"
-										onclick={removeSelectedFile}
-										class="rounded-md p-1 text-muted-foreground hover:bg-accent hover:text-foreground"
-									>
-										<X class="h-4 w-4" />
-									</button>
+			<form onsubmit={handleSubmit} class="flex flex-col gap-4 mt-4">
+				<!-- File Upload -->
+				{#if selectedFile}
+					<div class="rounded-lg border bg-muted p-4">
+						<div class="flex items-center justify-between">
+							<div class="flex items-center gap-3">
+								<div class="rounded bg-background p-2">
+									<FileText class="h-5 w-5 text-muted-foreground" />
+								</div>
+								<div>
+									<p class="font-medium text-sm">{selectedFile.name}</p>
+									<p class="text-xs text-muted-foreground">
+										{(selectedFile.size / 1024 / 1024).toFixed(2)} MB
+									</p>
 								</div>
 							</div>
-						{:else}
-							<FileUploadZone onFileSelect={handleFileSelect} maxSizeMB={50} />
-						{/if}
-					</Tabs.Content>
-
-					<!-- Manual Entry Tab -->
-					<Tabs.Content value="manual">
-						<!-- Empty - forms show in both tabs -->
-					</Tabs.Content>
-
-					<!-- Title -->
-					<FormField
-						label="Title"
-						name="title"
-						type="text"
-						value={title}
-						placeholder="Enter book title"
-						required={true}
-						oninput={(v) => (title = v)}
-					/>
-
-					<!-- Author -->
-					<FormField
-						label="Author"
-						name="author"
-						type="text"
-						value={author}
-						placeholder="Enter author name"
-						oninput={(v) => (author = v)}
-					/>
-
-					<!-- Description -->
-					<FormField
-						label="Description"
-						name="description"
-						type="textarea"
-						value={description}
-						placeholder="Brief description"
-						rows={2}
-						oninput={(v) => (description = v)}
-					/>
-
-					<!-- Cover URL -->
-					<div class="grid gap-2">
-						<label for="cover" class="text-sm font-medium">Cover URL</label>
-						<input
-							id="cover"
-							type="url"
-							value={coverUrl}
-							class="w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
-							placeholder="https://example.com/cover.jpg"
-							oninput={(e) => (coverUrl = e.currentTarget.value)}
-						/>
-					</div>
-
-					{#if error}
-						<p class="text-sm text-red-500">{error}</p>
-					{/if}
-
-					{#if isUploading}
-						<div class="grid gap-2">
-							<div class="flex items-center justify-between text-sm">
-								<span class="text-muted-foreground">Uploading...</span>
-								<span class="font-medium">{uploadProgress}%</span>
-							</div>
-							<ProgressBar value={uploadProgress} animated={true} />
+							<button
+								type="button"
+								onclick={removeSelectedFile}
+								class="rounded-md p-1 text-muted-foreground hover:bg-accent hover:text-foreground"
+							>
+								<X class="h-4 w-4" />
+							</button>
 						</div>
-					{/if}
-
-					<div class="flex justify-end gap-2 pt-2">
-						<Button type="button" variant="ghost" onclick={handleClose} disabled={isUploading}>
-							Cancel
-						</Button>
-						<Button type="submit" disabled={isUploading}>
-							{#if isUploading}
-								Uploading...
-							{:else}
-								Add Book
-							{/if}
-						</Button>
 					</div>
-				</form>
-			</Tabs.Root>
+				{:else}
+					<FileUploadZone onFileSelect={handleFileSelect} acceptedTypes={['.pdf']} maxSizeMB={50} />
+				{/if}
+
+				<!-- Title -->
+				<FormField
+					label="Title"
+					name="title"
+					type="text"
+					value={title}
+					placeholder="Enter book title"
+					required={true}
+					oninput={(v) => (title = v)}
+				/>
+
+				<!-- Author -->
+				<FormField
+					label="Author"
+					name="author"
+					type="text"
+					value={author}
+					placeholder="Enter author name"
+					required={false}
+					oninput={(v) => (author = v)}
+				/>
+
+				<!-- Description -->
+				<FormField
+					label="Description"
+					name="description"
+					type="textarea"
+					value={description}
+					placeholder="Enter description (optional)"
+					required={false}
+					rows={3}
+					oninput={(v) => (description = v)}
+				/>
+
+				<!-- Error Message -->
+				{#if error}
+					<p class="text-sm text-red-500">{error}</p>
+				{/if}
+
+				<!-- Upload Progress -->
+				{#if isUploading}
+					<div class="space-y-2">
+						<ProgressBar value={uploadProgress} size="sm" />
+						<p class="text-xs text-muted-foreground text-center">
+							Uploading... {uploadProgress}%
+						</p>
+					</div>
+				{/if}
+
+				<!-- Submit Button -->
+				<div class="flex gap-2">
+					<Button
+						type="button"
+						variant="outline"
+						onclick={handleClose}
+						disabled={isUploading}
+						class="flex-1"
+					>
+						Cancel
+					</Button>
+					<Button type="submit" disabled={isUploading || !selectedFile} class="flex-1">
+						{#if isUploading}
+							Uploading...
+						{:else}
+							Upload PDF
+						{/if}
+					</Button>
+				</div>
+			</form>
 		</Dialog.Content>
 	</Dialog.Portal>
 </Dialog.Root>

@@ -12,6 +12,8 @@ import type * as books from '../books.js';
 import type * as extraction from '../extraction.js';
 import type * as files from '../files.js';
 import type * as progress from '../progress.js';
+import type * as readingPositions from '../readingPositions.js';
+import type * as users from '../users.js';
 
 import type { ApiFromModules, FilterApi, FunctionReference } from 'convex/server';
 
@@ -20,6 +22,8 @@ declare const fullApi: ApiFromModules<{
 	extraction: typeof extraction;
 	files: typeof files;
 	progress: typeof progress;
+	readingPositions: typeof readingPositions;
+	users: typeof users;
 }>;
 
 /**

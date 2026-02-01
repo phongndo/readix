@@ -10,7 +10,7 @@
 		class?: string;
 	}
 
-	const DEFAULT_ACCEPTED_TYPES = ['.pdf', '.epub', '.txt'];
+	const DEFAULT_ACCEPTED_TYPES = ['.pdf'];
 </script>
 
 <script lang="ts">
@@ -93,21 +93,13 @@
 				<div>
 					<p class="text-sm font-medium">Drop your file here, or click to browse</p>
 					<p class="text-xs text-muted-foreground">
-						PDF, EPUB, TXT up to {maxSizeMB}MB
+						PDF files up to {maxSizeMB}MB
 					</p>
 				</div>
 				<div class="flex gap-4 text-xs text-muted-foreground">
 					<div class="flex items-center gap-1">
 						<FileText class="h-3 w-3" />
 						<span>PDF</span>
-					</div>
-					<div class="flex items-center gap-1">
-						<FileText class="h-3 w-3" />
-						<span>EPUB</span>
-					</div>
-					<div class="flex items-center gap-1">
-						<FileText class="h-3 w-3" />
-						<span>TXT</span>
 					</div>
 				</div>
 			</div>

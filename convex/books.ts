@@ -242,3 +242,18 @@ export const getBookContent = query({
 			.first();
 	}
 });
+
+/**
+ * Get books by storage ID (for file serving)
+ */
+export const getByStorageId = query({
+	args: {
+		storageId: v.id('_storage')
+	},
+	handler: async (ctx, args) => {
+		return await ctx.db
+			.query('books')
+			.filter((q) => q.eq(q.field('fileStorageId'), args.storageId))
+			.take(1);
+	}
+});
