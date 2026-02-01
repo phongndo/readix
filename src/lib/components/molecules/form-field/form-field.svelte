@@ -4,7 +4,7 @@
 	export interface FormFieldProps {
 		label: string;
 		name: string;
-		type?: 'text' | 'textarea';
+		type?: 'text' | 'textarea' | 'password' | 'email' | 'number';
 		value: string | number;
 		placeholder?: string;
 		required?: boolean;
@@ -16,6 +16,9 @@
 </script>
 
 <script lang="ts">
+	import Label from '$lib/components/ui/label/label.svelte';
+	import Input from '$lib/components/ui/input/input.svelte';
+
 	let {
 		label,
 		name,
@@ -28,18 +31,15 @@
 		class: className,
 		oninput
 	}: FormFieldProps = $props();
-
-	const inputClasses =
-		'w-full rounded-md border border-neutral-700 bg-background px-3 py-2 text-sm focus:border-red-500 focus:outline-none focus:ring-1 focus:ring-red-500';
 </script>
 
 <div class={cn('grid gap-2', className)}>
-	<label for={name} class="text-sm font-medium">
+	<Label for={name}>
 		{label}
 		{#if required}
 			<span class="text-red-500">*</span>
 		{/if}
-	</label>
+	</Label>
 
 	{#if type === 'textarea'}
 		<textarea
@@ -48,24 +48,21 @@
 			{rows}
 			{placeholder}
 			{required}
-			class={cn(inputClasses, 'resize-none')}
+			class="w-full resize-none rounded-md border border-neutral-700 bg-background px-3 py-2 text-sm focus:border-red-500 focus:outline-none focus:ring-1 focus:ring-red-500"
 			{value}
-			oninput={(e) => oninput?.(e.currentTarget.value)}
+			oninput={(e: Event & { currentTarget: HTMLTextAreaElement }) =>
+				oninput?.(e.currentTarget.value)}
 		></textarea>
 	{:else}
-		<input
+		<Input
 			id={name}
 			{name}
-			type="text"
+			type={type === 'number' ? 'text' : type}
 			{placeholder}
 			{required}
-			class={inputClasses}
-			{value}
-			oninput={(e) => oninput?.(e.currentTarget.value)}
+			value={String(value)}
+			{error}
+			oninput={(v: string) => oninput?.(v)}
 		/>
-	{/if}
-
-	{#if error}
-		<p class="text-sm text-red-500">{error}</p>
 	{/if}
 </div>
