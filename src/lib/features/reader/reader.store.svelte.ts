@@ -130,6 +130,9 @@ function createReaderStore() {
 		setAnnotations: (a: Annotation[]) => {
 			annotations = a;
 		},
+		deleteBookmark: (bookmarkId: string) => {
+			bookmarks = bookmarks.filter((b) => b.id !== bookmarkId);
+		},
 		setSearchQuery: (query: string) => {
 			searchQuery = query;
 		},
@@ -157,6 +160,26 @@ function createReaderStore() {
 		zoomOut: () => {
 			zoom = Math.max(0.25, zoom - 0.25);
 		},
+
+		// Bookmark actions
+		loadBookmarks: (bookmarksData: Bookmark[]) => {
+			bookmarks = bookmarksData;
+		},
+		addBookmark: (bookmark: Bookmark) => {
+			bookmarks = [...bookmarks, bookmark].sort((a, b) => a.page - b.page);
+		},
+
+		// Annotation actions
+		loadAnnotations: (annotationsData: Annotation[]) => {
+			annotations = annotationsData;
+		},
+		addAnnotation: (annotation: Annotation) => {
+			annotations = [...annotations, annotation];
+		},
+		removeAnnotation: (annotationId: string) => {
+			annotations = annotations.filter((a) => a.id !== annotationId);
+		},
+
 		reset: () => {
 			bookId = '';
 			format = 'pdf';

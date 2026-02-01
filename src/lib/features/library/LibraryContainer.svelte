@@ -2,6 +2,7 @@
 	import { SignedIn } from 'svelte-clerk';
 	import LibraryView from '$lib/features/library/LibraryView.svelte';
 	import { libraryState } from '$lib/state/libraryState.svelte';
+	import { convexLibraryStore } from '$lib/state/convexLibraryStore.svelte';
 	import { addBook, removeBook } from '$lib/features/library/library.logic';
 	import { uploadBookWithFile } from '$lib/services/bookService';
 	import { Effect } from 'effect';
@@ -17,9 +18,24 @@
 		};
 	} = $props();
 
+	// Initialize with server data on load
 	$effect(() => {
 		if (browser && data.books) {
 			libraryState.setBooks(data.books);
+			convexLibraryStore.clear();
+		}
+	});
+
+	// One-time fetch from Convex when userId is available
+	let initialFetchDone = $state(false);
+	$effect(() => {
+		if (!browser || initialFetchDone) return;
+
+		const userId = page.data.userId;
+		if (userId) {
+			// Initial fetch from Convex (manual, no polling)
+			convexLibraryStore.fetchBooks(userId);
+			initialFetchDone = true;
 		}
 	});
 
@@ -47,6 +63,8 @@
 
 		try {
 			await addBook(userId, e.detail);
+			// Manual refresh after adding book
+			await convexLibraryStore.refresh(userId);
 		} catch (error) {
 			console.error('Failed to add book:', error);
 		}
@@ -73,7 +91,11 @@
 
 		await Effect.runPromise(
 			effect.pipe(
-				Effect.tap(() => window.location.reload()),
+				Effect.tap(() => {
+					console.log('[LibraryContainer] Book uploaded successfully');
+					// Manual refresh after upload
+					convexLibraryStore.refresh(userId);
+				}),
 				Effect.catchAll((error) => {
 					console.error('Failed to upload book:', error);
 					alert('Failed to upload book. Please try again.');
@@ -89,6 +111,8 @@
 
 		try {
 			await removeBook(e.detail.bookId, userId);
+			// Manual refresh after deletion
+			await convexLibraryStore.refresh(userId);
 		} catch (error) {
 			console.error('Failed to delete book:', error);
 		}
@@ -98,9 +122,9 @@
 <SignedIn>
 	<div class="container mx-auto max-w-6xl p-4">
 		<LibraryView
-			books={libraryState.state.books}
-			isLoading={libraryState.state.isLoading}
-			error={libraryState.state.error}
+			books={convexLibraryStore.hasData ? convexLibraryStore.books : libraryState.state.books}
+			isLoading={convexLibraryStore.isLoading || libraryState.state.isLoading}
+			error={convexLibraryStore.error || libraryState.state.error}
 		/>
 	</div>
 </SignedIn>

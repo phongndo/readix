@@ -58,7 +58,8 @@ export class PdfEngine {
 	renderPage(
 		pageNum: number,
 		container: HTMLElement,
-		baseScale = 1.5
+		baseScale = 1.5,
+		zoom = 1.0
 	): Effect.Effect<void, Error, never> {
 		return Effect.tryPromise({
 			try: async () => {
@@ -84,9 +85,11 @@ export class PdfEngine {
 				}
 
 				// Calculate high-quality render scale
-				// Combine base scale with device pixel ratio for crisp text
+				// Combine base scale with device pixel ratio AND zoom for crisp text at all zoom levels
+				// Formula: baseScale (1.5) * dpr (2.0 on Retina) * zoom (user zoom level)
+				// Example at 200% zoom on Retina: 1.5 * 2.0 * 2.0 = 6.0x scale = super crisp!
 				const dpr = typeof window !== 'undefined' ? window.devicePixelRatio || 1 : 1;
-				const renderScale = baseScale * dpr;
+				const renderScale = baseScale * dpr * zoom;
 
 				// Calculate viewport at high resolution
 				const viewport = page.getViewport({ scale: renderScale });
@@ -187,6 +190,109 @@ export class PdfEngine {
 				return { x: pdfX, y: pdfY };
 			},
 			catch: (error) => new Error(`Failed to convert point for page ${pageNum}: ${error}`)
+		});
+	}
+
+	/**
+	 * Render invisible text layer for text selection
+	 * Creates absolutely positioned span elements matching PDF text layout
+	 * Text layer is invisible (transparent) but selectable
+	 */
+	renderTextLayer(
+		pageNum: number,
+		container: HTMLElement,
+		baseScale = 1.5,
+		zoom = 1.0
+	): Effect.Effect<
+		Array<{
+			text: string;
+			x: number;
+			y: number;
+			width: number;
+			height: number;
+			fontSize: number;
+		}>,
+		Error,
+		never
+	> {
+		return Effect.tryPromise({
+			try: async () => {
+				if (!this.pdfDocument) {
+					throw new Error('PDF not loaded');
+				}
+
+				const page = await this.pdfDocument.getPage(pageNum);
+				const textContent = await page.getTextContent();
+
+				// Get viewport at base scale with zoom (matches canvas rendering)
+				const dpr = typeof window !== 'undefined' ? window.devicePixelRatio || 1 : 1;
+				const renderScale = baseScale * dpr * zoom;
+				const viewport = page.getViewport({ scale: renderScale });
+
+				// Clear container
+				container.innerHTML = '';
+				container.style.position = 'absolute';
+				container.style.top = '0';
+				container.style.left = '0';
+				container.style.width = `${viewport.width / dpr}px`;
+				container.style.height = `${viewport.height / dpr}px`;
+				container.style.pointerEvents = 'auto';
+
+				const textItems: Array<{
+					text: string;
+					x: number;
+					y: number;
+					width: number;
+					height: number;
+					fontSize: number;
+				}> = [];
+
+				// Create text spans for each text item
+				for (const item of textContent.items) {
+					if (!('str' in item) || !item.str.trim()) continue;
+
+					// eslint-disable-next-line @typescript-eslint/no-explicit-any
+					const textItem = item as any;
+					const transform = textItem.transform as [number, number, number, number, number, number];
+
+					// Transform matrix: [a, b, c, d, e, f]
+					// e = x position, f = y position
+					const x = transform[4] / dpr;
+					const y = (viewport.height - transform[5]) / dpr;
+
+					// Calculate width and height
+					const width = (textItem.width * renderScale) / dpr;
+					const height = (textItem.height * renderScale) / dpr;
+					const fontSize = Math.abs(transform[3]) / dpr;
+
+					const span = document.createElement('span');
+					span.textContent = textItem.str;
+					span.style.position = 'absolute';
+					span.style.left = `${x}px`;
+					span.style.top = `${y - height}px`;
+					span.style.fontSize = `${fontSize}px`;
+					span.style.lineHeight = '1';
+					span.style.whiteSpace = 'pre';
+					span.style.color = 'transparent';
+					span.style.userSelect = 'text';
+					// eslint-disable-next-line @typescript-eslint/no-explicit-any
+					(span.style as any).webkitUserSelect = 'text';
+
+					container.appendChild(span);
+
+					textItems.push({
+						text: textItem.str,
+						x,
+						y: y - height,
+						width,
+						height,
+						fontSize
+					});
+				}
+
+				return textItems;
+			},
+			catch: (error) => new Error(`Failed to render text layer for page ${pageNum}: ${error}`)
 		});
 	}
 

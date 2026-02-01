@@ -70,7 +70,10 @@
 
 		await Effect.runPromise(
 			effect.pipe(
-				Effect.tap(() => window.location.reload()),
+				Effect.tap(() => {
+					console.log('[DashboardContainer] Book added successfully');
+					// No page reload needed - Convex subscription will auto-update
+				}),
 				Effect.catchAll((error) => {
 					console.error('Failed to add book:', error);
 					alert('Failed to add book. Please try again.');
@@ -105,7 +108,10 @@
 
 		await Effect.runPromise(
 			effect.pipe(
-				Effect.tap(() => window.location.reload()),
+				Effect.tap(() => {
+					console.log('[DashboardContainer] Book uploaded successfully');
+					// No page reload needed - Convex subscription will auto-update
+				}),
 				Effect.catchAll((error) => {
 					console.error('Failed to upload book:', error);
 					alert('Failed to upload book. Please try again.');
