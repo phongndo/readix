@@ -3,7 +3,7 @@
 	import { resolve } from '$app/paths';
 	import { UserButton } from 'svelte-clerk/client';
 	import { BookOpen, User, Bell } from '@lucide/svelte';
-	import { cn } from '$lib/utils.js';
+	import { cn } from '$lib/classnames.js';
 
 	let pathname = $derived(page.url.pathname);
 	let isReader = $derived(pathname.startsWith('/reader'));

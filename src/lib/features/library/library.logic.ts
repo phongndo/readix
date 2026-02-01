@@ -1,6 +1,6 @@
 import { Option } from 'effect';
 import { browser } from '$app/environment';
-import { libraryStore } from '$lib/stores/libraryStore';
+import { libraryState } from '$lib/state/libraryState.svelte';
 import { fetchBooksByUser, createBook, deleteBook } from '$lib/services/bookService';
 import { AppRuntime } from '$lib/effect/runtime';
 import { type CreateBookInput } from '$lib/domain/book/Book';
@@ -9,16 +9,16 @@ import type { AddBookFormData } from './library.types';
 export async function loadUserBooks(userId: string): Promise<void> {
 	if (!browser) return;
 
-	libraryStore.setLoading();
+	libraryState.setLoading();
 
 	const effect = fetchBooksByUser(userId);
 
 	try {
 		const books = await AppRuntime(effect);
-		libraryStore.setBooks(books);
+		libraryState.setBooks(books);
 	} catch (error) {
 		const errorMessage = error instanceof Error ? error.message : 'Failed to load books';
-		libraryStore.setError(errorMessage);
+		libraryState.setError(errorMessage);
 	}
 }
 
@@ -38,10 +38,10 @@ export async function addBook(userId: string, formData: AddBookFormData): Promis
 
 	try {
 		const book = await AppRuntime(effect);
-		libraryStore.addBook(book);
+		libraryState.addBook(book);
 	} catch (error) {
 		const errorMessage = error instanceof Error ? error.message : 'Failed to add book';
-		libraryStore.setError(errorMessage);
+		libraryState.setError(errorMessage);
 		throw new Error(errorMessage);
 	}
 }
@@ -53,10 +53,10 @@ export async function removeBook(bookId: string, userId: string): Promise<void> 
 
 	try {
 		await AppRuntime(effect);
-		libraryStore.removeBook(bookId);
+		libraryState.removeBook(bookId);
 	} catch (error) {
 		const errorMessage = error instanceof Error ? error.message : 'Failed to delete book';
-		libraryStore.setError(errorMessage);
+		libraryState.setError(errorMessage);
 		throw new Error(errorMessage);
 	}
 }

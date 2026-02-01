@@ -1,54 +1,48 @@
 import { Effect } from 'effect';
 import { browser } from '$app/environment';
-import { readingStore } from '$lib/stores/readingStore';
-import { libraryStore } from '$lib/stores/libraryStore';
+import { readingState } from '$lib/state/readingState.svelte';
+import { libraryState } from '$lib/state/libraryState.svelte';
 import { updateBookProgress } from '$lib/services/bookService';
 import { recordReadingSession, checkAndAwardAchievements } from '$lib/services/progressService';
 import type { Book } from '$lib/domain/book/Book';
 
 export function startReading(book: Book): void {
 	if (!browser) return;
-	readingStore.startReading(book, book.currentPage);
+	readingState.startReading(book, book.currentPage);
 }
 
 export function updatePage(page: number): void {
 	if (!browser) return;
-	readingStore.updatePage(page);
+	readingState.updatePage(page);
 }
 
 export function goToPage(pageNumber: number): void {
 	if (!browser) return;
-	readingStore.updatePage(Math.max(0, pageNumber));
+	readingState.updatePage(Math.max(0, pageNumber));
 }
 
 export function goToNextPage(): void {
 	if (!browser) return;
-	let state: { currentPage: number; currentBook: Book | null } | undefined;
-	readingStore.subscribe((s) => {
-		state = s;
-	})();
+	const state = readingState.state;
 
-	if (state?.currentBook && state.currentPage < state.currentBook.totalPages) {
-		readingStore.updatePage(state.currentPage + 1);
+	if (state.currentBook && state.currentPage < state.currentBook.totalPages) {
+		readingState.updatePage(state.currentPage + 1);
 	}
 }
 
 export function goToPreviousPage(): void {
 	if (!browser) return;
-	let state: { currentPage: number } | undefined;
-	readingStore.subscribe((s) => {
-		state = s;
-	})();
+	const state = readingState.state;
 
-	if (state && state.currentPage > 0) {
-		readingStore.updatePage(state.currentPage - 1);
+	if (state.currentPage > 0) {
+		readingState.updatePage(state.currentPage - 1);
 	}
 }
 
 export async function saveProgress(userId: string): Promise<string[]> {
 	if (!browser) return [];
 
-	const sessionData = readingStore.getSessionData();
+	const sessionData = readingState.getSessionData();
 	if (!sessionData) return [];
 
 	const { bookId, startPage, endPage, durationMinutes } = sessionData;
@@ -71,7 +65,7 @@ export async function saveProgress(userId: string): Promise<string[]> {
 
 		const newAchievements = await Effect.runPromise(checkAndAwardAchievements(userId));
 
-		libraryStore.updateBook(bookId as unknown as string, { currentPage: endPage });
+		libraryState.updateBook(bookId as unknown as string, { currentPage: endPage });
 
 		return newAchievements;
 	} catch (error) {
@@ -82,10 +76,10 @@ export async function saveProgress(userId: string): Promise<string[]> {
 
 export function stopReading(): void {
 	if (!browser) return;
-	readingStore.stopReading();
+	readingState.stopReading();
 }
 
 export function finishReading(): void {
 	if (!browser) return;
-	readingStore.reset();
+	readingState.reset();
 }

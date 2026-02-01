@@ -1,6 +1,6 @@
 <script lang="ts" module>
 	import type { Component } from 'svelte';
-	import { cn } from '$lib/utils.js';
+	import { cn } from '$lib/classnames.js';
 
 	export interface StatsGridItem {
 		icon: Component;

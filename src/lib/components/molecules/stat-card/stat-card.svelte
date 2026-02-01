@@ -1,6 +1,6 @@
 <script lang="ts" module>
 	import type { Component } from 'svelte';
-	import { cn } from '$lib/utils.js';
+	import { cn } from '$lib/classnames.js';
 	import CardContainer from '$lib/components/atoms/card-container/card-container.svelte';
 
 	export interface StatCardProps {

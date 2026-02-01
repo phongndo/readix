@@ -1,7 +1,7 @@
 <script lang="ts" module>
 	import type { Component } from 'svelte';
 	import type { Book } from '$lib/domain/book/Book';
-	import { cn } from '$lib/utils.js';
+	import { cn } from '$lib/classnames.js';
 
 	export interface BookGridProps {
 		books: Book[];

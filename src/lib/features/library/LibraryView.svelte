@@ -6,7 +6,7 @@
 	import UploadModal from '$lib/components/organisms/upload-modal/upload-modal.svelte';
 	import EmptySearchState from '$lib/components/molecules/empty-search-state/empty-search-state.svelte';
 	import type { Book } from '$lib/domain/book/Book';
-	import { libraryStore, filteredBooks, filterCounts } from '$lib/stores/libraryStore';
+	import { libraryState } from '$lib/state/libraryState.svelte';
 
 	let {
 		books = [],
@@ -22,7 +22,7 @@
 
 	$effect(() => {
 		if (books.length > 0) {
-			libraryStore.setBooks(books);
+			libraryState.setBooks(books);
 		}
 	});
 
@@ -56,7 +56,7 @@
 		<div>
 			<h1 class="text-2xl font-bold">Your Library</h1>
 			<p class="text-sm text-muted-foreground">
-				{$filterCounts.all} book{$filterCounts.all === 1 ? '' : 's'}
+				{libraryState.filterCounts.all} book{libraryState.filterCounts.all === 1 ? '' : 's'}
 			</p>
 		</div>
 		<Button onclick={handleAddBook}>
@@ -67,27 +67,27 @@
 
 	<!-- Toolbar with search, filters, and sort -->
 	<LibraryToolbar
-		bind:searchQuery={$libraryStore.searchQuery}
-		resultCount={$filteredBooks.length}
-		activeFilter={$libraryStore.activeFilter}
-		filterCounts={$filterCounts}
-		sortBy={$libraryStore.sortBy}
-		viewMode={$libraryStore.viewMode}
-		onSearch={(q) => libraryStore.setSearchQuery(q)}
-		onFilterChange={(f) => libraryStore.setActiveFilter(f)}
-		onSortChange={(s) => libraryStore.setSortBy(s)}
-		onViewModeChange={(m) => libraryStore.setViewMode(m)}
+		bind:searchQuery={libraryState.state.searchQuery}
+		resultCount={libraryState.filteredBooks.length}
+		activeFilter={libraryState.state.activeFilter}
+		filterCounts={libraryState.filterCounts}
+		sortBy={libraryState.state.sortBy}
+		viewMode={libraryState.state.viewMode}
+		onSearch={(q) => libraryState.setSearchQuery(q)}
+		onFilterChange={(f) => libraryState.setActiveFilter(f)}
+		onSortChange={(s) => libraryState.setSortBy(s)}
+		onViewModeChange={(m) => libraryState.setViewMode(m)}
 	/>
 
 	<!-- Book grid or empty state -->
-	{#if $libraryStore.searchQuery && $filteredBooks.length === 0}
+	{#if libraryState.state.searchQuery && libraryState.filteredBooks.length === 0}
 		<EmptySearchState
-			searchQuery={$libraryStore.searchQuery}
-			onClear={() => libraryStore.setSearchQuery('')}
+			searchQuery={libraryState.state.searchQuery}
+			onClear={() => libraryState.setSearchQuery('')}
 		/>
 	{:else}
 		<BookGrid
-			books={$filteredBooks}
+			books={libraryState.filteredBooks}
 			{isLoading}
 			{error}
 			onBookClick={handleBookClick}

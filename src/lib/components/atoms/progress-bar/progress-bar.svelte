@@ -1,5 +1,5 @@
 <script lang="ts" module>
-	import { cn } from '$lib/utils.js';
+	import { cn } from '$lib/classnames.js';
 
 	export interface ProgressBarProps {
 		value: number;
