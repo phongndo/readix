@@ -3,6 +3,7 @@
 	import SearchBar from '$lib/components/molecules/search-bar/search-bar.svelte';
 	import FilterTabs from '$lib/components/molecules/filter-tabs/filter-tabs.svelte';
 	import SortDropdown from '$lib/components/molecules/sort-dropdown/sort-dropdown.svelte';
+	import Tooltip from '$lib/components/ui/tooltip/tooltip.svelte';
 
 	export interface LibraryToolbarProps {
 		searchQuery: string;
@@ -48,26 +49,30 @@
 			<SortDropdown {sortBy} onChange={onSortChange} />
 
 			<div class="flex rounded-md border">
-				<button
-					type="button"
-					onclick={() => onViewModeChange('grid')}
-					class="p-2 {viewMode === 'grid'
-						? 'bg-accent text-accent-foreground'
-						: 'text-muted-foreground hover:bg-accent/50'}"
-					aria-label="Grid view"
-				>
-					<LayoutGrid class="h-4 w-4" />
-				</button>
-				<button
-					type="button"
-					onclick={() => onViewModeChange('list')}
-					class="p-2 {viewMode === 'list'
-						? 'bg-accent text-accent-foreground'
-						: 'text-muted-foreground hover:bg-accent/50'}"
-					aria-label="List view"
-				>
-					<List class="h-4 w-4" />
-				</button>
+				<Tooltip content="Grid view" position="bottom">
+					<button
+						type="button"
+						onclick={() => onViewModeChange('grid')}
+						class="p-2 {viewMode === 'grid'
+							? 'bg-accent text-accent-foreground'
+							: 'text-muted-foreground hover:bg-accent/50'}"
+						aria-label="Grid view"
+					>
+						<LayoutGrid class="h-4 w-4" />
+					</button>
+				</Tooltip>
+				<Tooltip content="List view" position="bottom">
+					<button
+						type="button"
+						onclick={() => onViewModeChange('list')}
+						class="p-2 {viewMode === 'list'
+							? 'bg-accent text-accent-foreground'
+							: 'text-muted-foreground hover:bg-accent/50'}"
+						aria-label="List view"
+					>
+						<List class="h-4 w-4" />
+					</button>
+				</Tooltip>
 			</div>
 		</div>
 	</div>

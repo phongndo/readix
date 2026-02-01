@@ -10,6 +10,7 @@
 		id?: string;
 		required?: boolean;
 		error?: string;
+		'aria-describedby'?: string;
 		class?: string;
 		oninput?: (value: string) => void;
 		onchange?: (value: string) => void;
@@ -28,12 +29,18 @@
 		id,
 		required = false,
 		error,
+		'aria-describedby': ariaDescribedBy,
 		class: className,
 		oninput,
 		onchange,
 		onblur,
 		onfocus
 	}: InputProps = $props();
+
+	const describedByIds = $derived(
+		[ariaDescribedBy, error && id ? `${id}-error` : undefined].filter(Boolean).join(' ') ||
+			undefined
+	);
 
 	const inputClasses =
 		'w-full rounded-md border border-neutral-700 bg-background px-3 py-2 text-sm focus:border-red-500 focus:outline-none focus:ring-1 focus:ring-red-500 disabled:cursor-not-allowed disabled:opacity-50';
@@ -53,7 +60,7 @@
 	bind:value
 	class={cn(inputClasses, errorClasses, className)}
 	aria-invalid={error ? 'true' : undefined}
-	aria-describedby={error ? `${id}-error` : undefined}
+	aria-describedby={describedByIds}
 	oninput={(e: Event & { currentTarget: HTMLInputElement }) => {
 		oninput?.(e.currentTarget.value);
 	}}

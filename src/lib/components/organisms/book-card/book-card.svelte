@@ -4,6 +4,7 @@
 	import type { Book } from '$lib/domain/book/Book';
 	import CardContainer from '$lib/components/atoms/card-container/card-container.svelte';
 	import ProgressBar from '$lib/components/atoms/progress-bar/progress-bar.svelte';
+	import Tooltip from '$lib/components/ui/tooltip/tooltip.svelte';
 
 	export interface BookCardProps {
 		book: Book;
@@ -61,15 +62,17 @@
 	</div>
 
 	{#if onDelete}
-		<button
-			onclick={(e) => {
-				e.stopPropagation();
-				onDelete?.();
-			}}
-			class="absolute right-2 top-2 rounded-md p-1.5 text-muted-foreground opacity-0 transition-opacity hover:bg-red-500/10 hover:text-red-500 group-hover:opacity-100"
-			aria-label="Delete book"
-		>
-			<Trash2 class="h-4 w-4" />
-		</button>
+		<Tooltip content="Remove from library" position="top">
+			<button
+				onclick={(e) => {
+					e.stopPropagation();
+					onDelete?.();
+				}}
+				class="absolute right-2 top-2 rounded-md p-1.5 text-muted-foreground opacity-0 transition-opacity hover:bg-red-500/10 hover:text-red-500 group-hover:opacity-100"
+				aria-label="Delete book"
+			>
+				<Trash2 class="h-4 w-4" />
+			</button>
+		</Tooltip>
 	{/if}
 </CardContainer>

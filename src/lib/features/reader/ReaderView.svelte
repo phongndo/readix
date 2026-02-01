@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { ChevronLeft, ChevronRight } from '@lucide/svelte';
 	import Button from '$lib/components/ui/button/button.svelte';
+	import Tooltip from '$lib/components/ui/tooltip/tooltip.svelte';
 	import type { ReaderViewProps } from './reader.types';
 	import { calculateProgressPercentage } from '$lib/domain/book/bookRules';
 
@@ -71,10 +72,12 @@
 	<!-- Header -->
 	<header class="flex items-center justify-between border-b px-4 py-3">
 		<div class="flex items-center gap-3">
-			<Button variant="ghost" size="sm" onclick={handleExit}>
-				<ChevronLeft class="mr-1 h-4 w-4" />
-				Back
-			</Button>
+			<Tooltip content="Back to library (Esc)" position="bottom">
+				<Button variant="ghost" size="sm" onclick={handleExit}>
+					<ChevronLeft class="mr-1 h-4 w-4" />
+					Back
+				</Button>
+			</Tooltip>
 			<div>
 				<h1 class="font-semibold leading-tight">{book.title}</h1>
 				<p class="text-xs text-muted-foreground">{book.author}</p>
@@ -102,10 +105,12 @@
 	<!-- Footer controls -->
 	<footer class="border-t px-4 py-3">
 		<div class="mx-auto flex max-w-2xl items-center justify-between gap-4">
-			<Button variant="outline" size="sm" disabled={!canGoPrevious} onclick={goToPrevious}>
-				<ChevronLeft class="mr-1 h-4 w-4" />
-				Previous
-			</Button>
+			<Tooltip content="Previous page (←)" position="top">
+				<Button variant="outline" size="sm" disabled={!canGoPrevious} onclick={goToPrevious}>
+					<ChevronLeft class="mr-1 h-4 w-4" />
+					Previous
+				</Button>
+			</Tooltip>
 
 			<div class="flex items-center gap-2">
 				<span class="text-sm text-muted-foreground">Go to page:</span>
@@ -119,10 +124,12 @@
 				/>
 			</div>
 
-			<Button variant="outline" size="sm" disabled={!canGoNext} onclick={goToNext}>
-				Next
-				<ChevronRight class="ml-1 h-4 w-4" />
-			</Button>
+			<Tooltip content="Next page (→)" position="top">
+				<Button variant="outline" size="sm" disabled={!canGoNext} onclick={goToNext}>
+					Next
+					<ChevronRight class="ml-1 h-4 w-4" />
+				</Button>
+			</Tooltip>
 		</div>
 	</footer>
 </div>
