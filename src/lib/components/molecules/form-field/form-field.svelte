@@ -35,9 +35,9 @@
 	}: FormFieldProps = $props();
 
 	// Generate unique IDs for ARIA attributes
-	const inputId = name;
-	const errorId = `${name}-error`;
-	const descId = `${name}-description`;
+	const inputId = $derived(name);
+	const errorId = $derived(`${name}-error`);
+	const descId = $derived(`${name}-description`);
 
 	// Build aria-describedby value
 	const ariaDescribedBy = $derived(

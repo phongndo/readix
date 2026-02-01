@@ -53,23 +53,34 @@
 		<div class="flex items-center gap-1">
 			{#if onRead}
 				<Tooltip content="Continue reading" position="top">
-					<Button variant="ghost" size="icon-sm" onclick={onRead} aria-label="Read book">
-						<BookOpen class="h-4 w-4" />
-					</Button>
+					{#snippet children({ props })}
+						<Button
+							{...props}
+							variant="ghost"
+							size="icon-sm"
+							onclick={onRead}
+							aria-label="Read book"
+						>
+							<BookOpen class="h-4 w-4" />
+						</Button>
+					{/snippet}
 				</Tooltip>
 			{/if}
 
 			{#if onDelete}
 				<Tooltip content="Remove from library" position="top">
-					<Button
-						variant="ghost"
-						size="icon-sm"
-						onclick={onDelete}
-						class="hover:text-red-500"
-						aria-label="Delete book"
-					>
-						<Trash2 class="h-4 w-4" />
-					</Button>
+					{#snippet children({ props })}
+						<Button
+							{...props}
+							variant="ghost"
+							size="icon-sm"
+							onclick={onDelete}
+							class="hover:text-red-500"
+							aria-label="Delete book"
+						>
+							<Trash2 class="h-4 w-4" />
+						</Button>
+					{/snippet}
 				</Tooltip>
 			{/if}
 		</div>

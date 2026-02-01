@@ -73,10 +73,12 @@
 	<header class="flex items-center justify-between border-b px-4 py-3">
 		<div class="flex items-center gap-3">
 			<Tooltip content="Back to library (Esc)" position="bottom">
-				<Button variant="ghost" size="sm" onclick={handleExit}>
-					<ChevronLeft class="mr-1 h-4 w-4" />
-					Back
-				</Button>
+				{#snippet children({ props })}
+					<Button {...props} variant="ghost" size="sm" onclick={handleExit}>
+						<ChevronLeft class="mr-1 h-4 w-4" />
+						Back
+					</Button>
+				{/snippet}
 			</Tooltip>
 			<div>
 				<h1 class="font-semibold leading-tight">{book.title}</h1>
@@ -106,10 +108,18 @@
 	<footer class="border-t px-4 py-3">
 		<div class="mx-auto flex max-w-2xl items-center justify-between gap-4">
 			<Tooltip content="Previous page (←)" position="top">
-				<Button variant="outline" size="sm" disabled={!canGoPrevious} onclick={goToPrevious}>
-					<ChevronLeft class="mr-1 h-4 w-4" />
-					Previous
-				</Button>
+				{#snippet children({ props })}
+					<Button
+						{...props}
+						variant="outline"
+						size="sm"
+						disabled={!canGoPrevious}
+						onclick={goToPrevious}
+					>
+						<ChevronLeft class="mr-1 h-4 w-4" />
+						Previous
+					</Button>
+				{/snippet}
 			</Tooltip>
 
 			<div class="flex items-center gap-2">
@@ -125,10 +135,12 @@
 			</div>
 
 			<Tooltip content="Next page (→)" position="top">
-				<Button variant="outline" size="sm" disabled={!canGoNext} onclick={goToNext}>
-					Next
-					<ChevronRight class="ml-1 h-4 w-4" />
-				</Button>
+				{#snippet children({ props })}
+					<Button {...props} variant="outline" size="sm" disabled={!canGoNext} onclick={goToNext}>
+						Next
+						<ChevronRight class="ml-1 h-4 w-4" />
+					</Button>
+				{/snippet}
 			</Tooltip>
 		</div>
 	</footer>

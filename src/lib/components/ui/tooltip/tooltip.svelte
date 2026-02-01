@@ -2,13 +2,14 @@
 	import { Tooltip as BitsTooltip } from 'bits-ui';
 	import { cn } from '$lib/classnames.js';
 	import type { Snippet } from 'svelte';
+	import type { HTMLAttributes } from 'svelte/elements';
 
 	export interface TooltipProps {
 		content: string;
 		position?: 'top' | 'bottom' | 'left' | 'right';
 		delay?: number;
 		class?: string;
-		children: Snippet;
+		children: Snippet<[{ props: HTMLAttributes<HTMLElement> }]>;
 	}
 
 	export { BitsTooltip as TooltipRoot };
@@ -33,7 +34,9 @@
 
 <BitsTooltip.Root delayDuration={delay}>
 	<BitsTooltip.Trigger class={cn('inline-flex', className)}>
-		{@render children()}
+		{#snippet child({ props }: { props: HTMLAttributes<HTMLElement> })}
+			{@render children({ props })}
+		{/snippet}
 	</BitsTooltip.Trigger>
 	<BitsTooltip.Portal>
 		<BitsTooltip.Content

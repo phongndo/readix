@@ -50,28 +50,34 @@
 
 			<div class="flex rounded-md border">
 				<Tooltip content="Grid view" position="bottom">
-					<button
-						type="button"
-						onclick={() => onViewModeChange('grid')}
-						class="p-2 {viewMode === 'grid'
-							? 'bg-accent text-accent-foreground'
-							: 'text-muted-foreground hover:bg-accent/50'}"
-						aria-label="Grid view"
-					>
-						<LayoutGrid class="h-4 w-4" />
-					</button>
+					{#snippet children({ props })}
+						<button
+							{...props}
+							type="button"
+							onclick={() => onViewModeChange('grid')}
+							class="p-2 {viewMode === 'grid'
+								? 'bg-accent text-accent-foreground'
+								: 'text-muted-foreground hover:bg-accent/50'}"
+							aria-label="Grid view"
+						>
+							<LayoutGrid class="h-4 w-4" />
+						</button>
+					{/snippet}
 				</Tooltip>
 				<Tooltip content="List view" position="bottom">
-					<button
-						type="button"
-						onclick={() => onViewModeChange('list')}
-						class="p-2 {viewMode === 'list'
-							? 'bg-accent text-accent-foreground'
-							: 'text-muted-foreground hover:bg-accent/50'}"
-						aria-label="List view"
-					>
-						<List class="h-4 w-4" />
-					</button>
+					{#snippet children({ props })}
+						<button
+							{...props}
+							type="button"
+							onclick={() => onViewModeChange('list')}
+							class="p-2 {viewMode === 'list'
+								? 'bg-accent text-accent-foreground'
+								: 'text-muted-foreground hover:bg-accent/50'}"
+							aria-label="List view"
+						>
+							<List class="h-4 w-4" />
+						</button>
+					{/snippet}
 				</Tooltip>
 			</div>
 		</div>

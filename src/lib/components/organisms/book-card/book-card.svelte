@@ -63,16 +63,19 @@
 
 	{#if onDelete}
 		<Tooltip content="Remove from library" position="top">
-			<button
-				onclick={(e) => {
-					e.stopPropagation();
-					onDelete?.();
-				}}
-				class="absolute right-2 top-2 rounded-md p-1.5 text-muted-foreground opacity-0 transition-opacity hover:bg-red-500/10 hover:text-red-500 group-hover:opacity-100"
-				aria-label="Delete book"
-			>
-				<Trash2 class="h-4 w-4" />
-			</button>
+			{#snippet children({ props })}
+				<button
+					{...props}
+					onclick={(e) => {
+						e.stopPropagation();
+						onDelete?.();
+					}}
+					class="absolute right-2 top-2 rounded-md p-1.5 text-muted-foreground opacity-0 transition-opacity hover:bg-red-500/10 hover:text-red-500 group-hover:opacity-100"
+					aria-label="Delete book"
+				>
+					<Trash2 class="h-4 w-4" />
+				</button>
+			{/snippet}
 		</Tooltip>
 	{/if}
 </CardContainer>
