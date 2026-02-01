@@ -8,7 +8,7 @@ Reading platform with Duolingo-style gamification. Minimal, zen UI. No gradients
 - **Framework**: SvelteKit 5 (runes: `$props`, `$bindable`)
 - **DB**: Convex (real-time sync database)
 - **Auth**: Clerk via `svelte-clerk`
-- **Styling**: Tailwind CSS v4, shadcn-svelte components
+- **Styling**: Tailwind CSS v4, Bits UI primitives, custom components
 - **Error Handling**: Effect library for functional error management
 - **Package Manager**: Bun (bun.lock present)
 
@@ -179,6 +179,12 @@ Strict atomic design with explicit hierarchy:
 
 ```
 src/lib/components/
+├── ui/                 # Bits UI primitive wrappers
+│   ├── button/
+│   ├── input/
+│   ├── label/
+│   ├── dialog/
+│   └── select/
 ├── atoms/              # Single-element primitives
 │   ├── button/
 │   ├── input/
@@ -230,6 +236,11 @@ src/lib/components/
    - Organisms import atoms and molecules
    - Features import from all component levels
 
+7. **UI folder distinction**
+   - `ui/`: Bits UI headless primitive wrappers (accessibility, state handling)
+   - `atoms/`: Custom presentational components
+   - Molecules compose from both `ui/` and `atoms/` as needed
+
 ## Testing
 
 ### Test Types
@@ -264,7 +275,9 @@ bun playwright test e2e/demo.test.ts
 - **Zen aesthetic**: Clean, clear, spacious
 - **Focus on reading experience**: Speed and functionality first
 - Use Tailwind v4 classes with `@tailwindcss/vite`
-- shadcn-svelte components in `lib/components/ui/`
+- Bits UI provides headless, accessible primitives
+- We wrap them in `ui/` folder with our Tailwind styling
+- Use `data-[state]` attributes for styling states (no animations)
 
 ## Database
 

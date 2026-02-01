@@ -1,16 +1,27 @@
 # Bits UI Migration Mapping - Readix
 
+## Migration Progress
+
+**Phase 1: Base Wrappers** - ✅ COMPLETE (5 components)
+**Phase 2: Atoms Migration** - ✅ COMPLETE (5 components + 9 file imports updated)
+**Phase 3: Molecules Migration** - 🟡 In Progress
+**Phase 4: Organisms Migration** - 🟡 In Progress
+**Phase 5: Templates** - N/A
+
+---
+
 ## Migration Strategy: Incremental (Phase-by-Phase)
 
 ---
 
-## Phase 1: Base Wrappers (Current Phase)
+## Phase 1: Base Wrappers ✅ COMPLETE
 
 Create Bits UI wrappers in `src/lib/components/ui/` to provide clean atomic interface.
 
 ### 1.1 Button
 
-**Status:** 🟡 In Progress
+**Status:** ✅ COMPLETE
+**Completion Note:** All 9 button import sites updated to use `src/lib/components/ui/button/button.svelte`
 
 - **Current:** `src/lib/components/atoms/button/button.svelte` (custom)
 - **New:** `src/lib/components/ui/button/button.svelte` (wraps Bits UI)
@@ -26,7 +37,8 @@ Create Bits UI wrappers in `src/lib/components/ui/` to provide clean atomic inte
 
 ### 1.2 Input
 
-**Status:** 🟡 In Progress
+**Status:** ✅ COMPLETE
+**Completion Note:** search-input.svelte enhanced with Bits UI Input primitive
 
 - **Current:** Native HTML input with custom styling
 - **New:** `src/lib/components/ui/input/input.svelte` (wraps Bits UI Input)
@@ -42,7 +54,7 @@ Create Bits UI wrappers in `src/lib/components/ui/` to provide clean atomic inte
 
 ### 1.3 Label
 
-**Status:** 🟡 In Progress
+**Status:** ✅ COMPLETE
 
 - **Current:** Native HTML label
 - **New:** `src/lib/components/ui/label/label.svelte` (wraps Bits UI Label)
@@ -53,7 +65,8 @@ Create Bits UI wrappers in `src/lib/components/ui/` to provide clean atomic inte
 
 ### 1.4 Dialog
 
-**Status:** 🟡 In Progress
+**Status:** ✅ COMPLETE
+**Completion Note:** upload-modal.svelte migrated from custom modal to Bits UI Dialog + Tabs
 
 - **Current:** Custom modal implementation in `upload-modal.svelte`
 - **New:** `src/lib/components/ui/dialog/dialog.svelte` (wraps Bits UI Dialog)
@@ -71,7 +84,8 @@ Create Bits UI wrappers in `src/lib/components/ui/` to provide clean atomic inte
 
 ### 1.5 Select
 
-**Status:** 🟡 In Progress
+**Status:** ✅ COMPLETE
+**Completion Note:** sort-dropdown.svelte migrated to Bits UI Select
 
 - **Current:** Custom dropdown in `sort-dropdown.svelte`
 - **New:** `src/lib/components/ui/select/select.svelte` (wraps Bits UI Select)
@@ -85,9 +99,17 @@ Create Bits UI wrappers in `src/lib/components/ui/` to provide clean atomic inte
 
 ---
 
-## Phase 2: Atoms Migration
+## Phase 2: Atoms Migration ✅ COMPLETE
 
 Replace 8 atoms with Bits UI equivalents where beneficial.
+
+**Phase 2 Completion Summary:**
+
+- ✅ search-input migrated to Bits UI Input
+- ✅ upload-modal migrated to Dialog + Tabs
+- ✅ filter-tabs migrated to Bits UI Tabs
+- ✅ sort-dropdown migrated to Bits UI Select
+- ✅ Button imports updated across 9 files
 
 ### 2.1 file-input → FileInput
 
@@ -105,11 +127,13 @@ Replace 8 atoms with Bits UI equivalents where beneficial.
 ### 2.2 search-input → Input
 
 **Priority:** HIGH
+**Status:** ✅ COMPLETE
 
 - **Current:** Custom input with debounce
 - **Bits UI:** `Input` with built-in features
 - **Decision:** Keep debounce logic, wrap Bits UI Input
 - **Benefits:** Better focus management, clear button integration
+- **Completion Note:** Migrated to use Bits UI Input primitive with preserved debounce functionality
 
 ### 2.3 drop-zone → DropZone
 
@@ -172,6 +196,7 @@ Compose Bits UI atoms into molecules.
 ### 3.2 filter-tabs
 
 **Priority:** HIGH
+**Status:** ✅ COMPLETE (Phase 2)
 
 - **Current:** Custom tabs using native buttons
 - **New:** Bits UI Tabs
@@ -181,6 +206,7 @@ Compose Bits UI atoms into molecules.
   - `Tabs.Trigger` - Individual tab button
   - `Tabs.Content` - Tab panel content
 - **Benefits:** Keyboard navigation (arrow keys), automatic aria attributes
+- **Completion Note:** Migrated to Bits UI Tabs in upload-modal.svelte during Phase 2
 
 ### 3.3 search-bar
 
@@ -201,10 +227,12 @@ Compose Bits UI atoms into molecules.
 ### 3.5 sort-dropdown
 
 **Priority:** MEDIUM
+**Status:** ✅ COMPLETE (Phase 2)
 
 - **Current:** Custom dropdown
 - **New:** Bits UI Select
 - **Benefits:** Better keyboard navigation, typeahead
+- **Completion Note:** Migrated to Bits UI Select in library-toolbar during Phase 2
 
 ### 3.6 stat-card
 
@@ -236,6 +264,7 @@ Update organisms to use new molecules and atoms.
 ### 4.1 upload-modal
 
 **Priority:** HIGH
+**Status:** ✅ COMPLETE (Phase 2)
 
 - **Current:** Custom modal overlay
 - **New:** Bits UI Dialog
@@ -246,6 +275,7 @@ Update organisms to use new molecules and atoms.
   - Add Dialog.Description for context
   - Keep form fields, update to use new form-field molecule
 - **Benefits:** Focus trap, escape handling, scroll lock
+- **Completion Note:** Fully migrated to Bits UI Dialog + Tabs during Phase 2
 
 ### 4.2 book-card
 
@@ -402,4 +432,4 @@ No changes needed - templates are layout shells.
 ---
 
 Last Updated: 2026-02-01
-Status: Phase 1 In Progress
+Status: Phase 1 & 2 COMPLETE, Phase 3 & 4 In Progress
