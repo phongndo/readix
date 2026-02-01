@@ -37,10 +37,9 @@ export interface ConvexBook {
  * @returns Book - Domain model book with proper types
  */
 export function convertConvexBookToBook(convexBook: ConvexBook): Book {
-	// eslint-disable-next-line @typescript-eslint/no-explicit-any
 	return {
-		id: convexBook._id as any,
-		userId: convexBook.userId as any,
+		id: convexBook._id as unknown as Book['id'],
+		userId: convexBook.userId as unknown as Book['userId'],
 		title: convexBook.title,
 		author: convexBook.author || 'Unknown Author',
 		description: convexBook.description || '',
@@ -49,7 +48,7 @@ export function convertConvexBookToBook(convexBook: ConvexBook): Book {
 		currentPage: convexBook.currentPage,
 		content: convexBook.content || '',
 		fileStorageId: convexBook.fileStorageId
-			? Option.some(convexBook.fileStorageId as any)
+			? Option.some(String(convexBook.fileStorageId))
 			: Option.none(),
 		fileName: convexBook.fileName ? Option.some(convexBook.fileName) : Option.none(),
 		fileType: convexBook.fileType ? Option.some(convexBook.fileType) : Option.none(),

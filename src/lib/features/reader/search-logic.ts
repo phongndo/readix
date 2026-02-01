@@ -2,6 +2,7 @@ import { Effect } from 'effect';
 import Fuse from 'fuse.js';
 import { convexClient } from '$lib/convex/client';
 import { api } from '$lib/convex/api';
+import type { Id } from '$lib/convex/api';
 import type { SearchResult } from './reader.types';
 
 // Fuse.js options for fuzzy search
@@ -139,7 +140,7 @@ export function searchClientSide(
  * Perform server-side search using Convex searchIndex
  */
 export function searchServerSide(
-	bookId: string,
+	bookId: Id<'books'>,
 	query: string
 ): Effect.Effect<SearchResult[], Error, never> {
 	return Effect.tryPromise({
@@ -149,7 +150,7 @@ export function searchServerSide(
 			}
 
 			const results = await convexClient.query(api.documentText.searchDocument, {
-				bookId: bookId as any,
+				bookId,
 				query
 			});
 
@@ -178,7 +179,7 @@ export function searchServerSide(
  * 3. Remove duplicates and sort by relevance
  */
 export function hybridSearch(
-	bookId: string,
+	bookId: Id<'books'>,
 	query: string,
 	loadedPages: SearchIndexEntry[],
 	searchIndex: Fuse<SearchIndexEntry> | null
@@ -218,47 +219,5 @@ export function hybridSearch(
 
 		// Sort by score (lower is better)
 		return merged.sort((a, b) => a.score - b.score).slice(0, 20);
-	});
-}
-
-/**
- * Save extracted text to Convex for a page
- */
-export function savePageText(
-	bookId: string,
-	page: number,
-	text: string
-): Effect.Effect<string, Error, never> {
-	return Effect.tryPromise({
-		try: async () => {
-			const wordCount = text.split(/\s+/).filter((w) => w.length > 0).length;
-
-			const docId = await convexClient.mutation(api.documentText.extractPageText, {
-				bookId: bookId as any,
-				page,
-				text,
-				wordCount
-			});
-
-			return docId;
-		},
-		catch: (error) => new Error(`Failed to save page text: ${error}`)
-	});
-}
-
-/**
- * Check if page text already exists in database
- */
-export function pageTextExists(bookId: string, page: number): Effect.Effect<boolean, Error, never> {
-	return Effect.tryPromise({
-		try: async () => {
-			const exists = await convexClient.query(api.documentText.pageTextExists, {
-				bookId: bookId as any,
-				page
-			});
-
-			return exists;
-		},
-		catch: (error) => new Error(`Failed to check page text: ${error}`)
 	});
 }

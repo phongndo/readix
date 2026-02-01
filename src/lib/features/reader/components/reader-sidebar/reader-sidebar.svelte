@@ -20,8 +20,15 @@
 </script>
 
 <script lang="ts">
-	// eslint-disable-next-line @typescript-eslint/no-unused-vars
-	let { bookId, userId, currentPage, onJumpToPage, onClose }: ReaderSidebarProps = $props();
+	let {
+		bookId,
+		// eslint-disable-next-line @typescript-eslint/no-unused-vars
+		userId: _userId,
+		// eslint-disable-next-line @typescript-eslint/no-unused-vars
+		currentPage: _currentPage,
+		onJumpToPage,
+		onClose
+	}: ReaderSidebarProps = $props();
 
 	const tabs: TabConfig[] = [
 		{ id: 'bookmarks', label: 'Bookmarks', icon: Bookmark },

@@ -8,7 +8,10 @@
  * @module
  */
 
+import type * as annotations from '../annotations.js';
+import type * as bookmarks from '../bookmarks.js';
 import type * as books from '../books.js';
+import type * as documentText from '../documentText.js';
 import type * as extraction from '../extraction.js';
 import type * as files from '../files.js';
 import type * as progress from '../progress.js';
@@ -18,7 +21,10 @@ import type * as users from '../users.js';
 import type { ApiFromModules, FilterApi, FunctionReference } from 'convex/server';
 
 declare const fullApi: ApiFromModules<{
+	annotations: typeof annotations;
+	bookmarks: typeof bookmarks;
 	books: typeof books;
+	documentText: typeof documentText;
 	extraction: typeof extraction;
 	files: typeof files;
 	progress: typeof progress;

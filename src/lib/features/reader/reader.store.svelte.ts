@@ -1,5 +1,12 @@
+import type Fuse from 'fuse.js';
 import type { SearchResult } from '$lib/features/reader/reader.types';
 import type { Bookmark, Annotation } from '$lib/domain/reading/ReadingPosition';
+
+interface SearchIndexEntry {
+	page: number;
+	text: string;
+	wordCount: number;
+}
 
 /**
  * Reader state management using Svelte 5 runes
@@ -32,6 +39,8 @@ function createReaderStore() {
 	let searchQuery = $state('');
 	let searchResults = $state<SearchResult[]>([]);
 	let isSearching = $state(false);
+	let searchIndex = $state<Fuse<SearchIndexEntry> | null>(null);
+	let searchIndexEntries = $state<SearchIndexEntry[]>([]);
 
 	return {
 		// Getters
@@ -85,6 +94,12 @@ function createReaderStore() {
 		},
 		get isSearching() {
 			return isSearching;
+		},
+		get searchIndex() {
+			return searchIndex;
+		},
+		get searchIndexEntries() {
+			return searchIndexEntries;
 		},
 
 		// Setters
@@ -142,6 +157,15 @@ function createReaderStore() {
 		setIsSearching: (searching: boolean) => {
 			isSearching = searching;
 		},
+		setSearchIndex: (index: Fuse<SearchIndexEntry> | null) => {
+			searchIndex = index;
+		},
+		setSearchIndexEntries: (entries: SearchIndexEntry[]) => {
+			searchIndexEntries = entries;
+		},
+		addSearchIndexEntry: (entry: SearchIndexEntry) => {
+			searchIndexEntries = [...searchIndexEntries, entry];
+		},
 
 		// Actions
 		nextPage: () => {
@@ -198,6 +222,8 @@ function createReaderStore() {
 			searchQuery = '';
 			searchResults = [];
 			isSearching = false;
+			searchIndex = null;
+			searchIndexEntries = [];
 		}
 	};
 }

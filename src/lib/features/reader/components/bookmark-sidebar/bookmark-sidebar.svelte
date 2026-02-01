@@ -11,7 +11,14 @@
 		onJumpToPage: (page: number) => void;
 	}
 
-	let { bookId, userId, currentPage, onJumpToPage }: BookmarkSidebarProps = $props();
+	let {
+		// eslint-disable-next-line @typescript-eslint/no-unused-vars
+		bookId: _bookId,
+		// eslint-disable-next-line @typescript-eslint/no-unused-vars
+		userId: _userId,
+		currentPage,
+		onJumpToPage
+	}: BookmarkSidebarProps = $props();
 
 	const sortedBookmarks = $derived(
 		[...readerStore.bookmarks].sort((a: BookmarkType, b: BookmarkType) => a.page - b.page)

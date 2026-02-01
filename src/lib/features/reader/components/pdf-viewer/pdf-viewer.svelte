@@ -157,6 +157,19 @@
 		}
 	}
 
+	/**
+	 * Scroll to a specific page
+	 */
+	export function scrollToPage(pageNum: number) {
+		if (!container) return;
+
+		const pageWrapper = container.querySelector(`[data-page="${pageNum}"]`);
+		if (pageWrapper) {
+			pageWrapper.scrollIntoView({ behavior: 'smooth', block: 'start' });
+		}
+	}
+
+	// eslint-disable-next-line @typescript-eslint/no-unused-vars
 	function handleTextSelect(page: number, selection: { text: string; position: TextPosition }) {
 		selectedText = selection.text;
 		selectedPosition = selection.position;

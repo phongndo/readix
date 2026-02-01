@@ -1,15 +1,17 @@
 <script lang="ts" module>
+	import type { Snippet } from 'svelte';
 	import type { TextPosition } from '$lib/features/reader/reader.types';
 
 	export interface TextLayerProps {
 		page: number;
 		scale: number;
 		onTextSelect: (selection: { text: string; position: TextPosition }) => void;
+		children: Snippet;
 	}
 </script>
 
 <script lang="ts">
-	let { page, scale, onTextSelect }: TextLayerProps = $props();
+	let { page, scale, onTextSelect, children }: TextLayerProps = $props();
 
 	let textLayerRef = $state<HTMLDivElement | null>(null);
 
@@ -34,7 +36,6 @@
 		}));
 
 		// Get character offsets (approximate)
-		const textContent = textLayerRef.textContent || '';
 		const preSelectionRange = document.createRange();
 		preSelectionRange.selectNodeContents(textLayerRef);
 		preSelectionRange.setEnd(range.startContainer, range.startOffset);
@@ -60,7 +61,8 @@
 <div
 	bind:this={textLayerRef}
 	class="absolute inset-0 select-text"
-	role="region"
+	role="textbox"
+	tabindex="0"
 	aria-label="Text content for page {page}"
 	onmouseup={handleMouseUp}
 	onkeyup={(e) => {
@@ -70,5 +72,5 @@
 	}}
 >
 	<!-- Text spans will be rendered here by pdf-engine.renderTextLayer -->
-	<slot />
+	{@render children()}
 </div>

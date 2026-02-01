@@ -1,8 +1,11 @@
 <script lang="ts" module>
 	import SearchInput from '$lib/components/atoms/search-input/search-input.svelte';
 	import { readerStore } from '$lib/features/reader/reader.store.svelte';
+	import { hybridSearch } from '$lib/features/reader/search-logic';
 	import type { SearchResult } from '$lib/features/reader/reader.types';
+	import type { Id } from '$lib/convex/api';
 	import { Search } from '@lucide/svelte';
+	import { Effect } from 'effect';
 
 	export interface SearchPanelProps {
 		bookId: string;
@@ -11,13 +14,49 @@
 </script>
 
 <script lang="ts">
-	// eslint-disable-next-line @typescript-eslint/no-unused-vars
 	let { bookId, onJumpToPage }: SearchPanelProps = $props();
+
+	// Debounce timer for search
+	let searchTimeout: ReturnType<typeof setTimeout> | null = null;
 
 	function handleSearchInput(query: string) {
 		readerStore.setSearchQuery(query);
-		// Note: actual search logic will be implemented separately
-		// This is the UI-only implementation
+
+		// Clear previous timeout
+		if (searchTimeout) {
+			clearTimeout(searchTimeout);
+		}
+
+		// Debounce search by 300ms
+		searchTimeout = setTimeout(() => {
+			performSearch(query);
+		}, 300);
+	}
+
+	async function performSearch(query: string) {
+		if (!query.trim() || query.length < 3) {
+			readerStore.setSearchResults([]);
+			return;
+		}
+
+		readerStore.setIsSearching(true);
+
+		try {
+			const results = await Effect.runPromise(
+				hybridSearch(
+					bookId as Id<'books'>,
+					query,
+					readerStore.searchIndexEntries,
+					readerStore.searchIndex
+				)
+			);
+			readerStore.setSearchResults(results);
+		} catch (err) {
+			console.error('Search failed:', err);
+			readerStore.setSearchResults([]);
+		} finally {
+			readerStore.setIsSearching(false);
+		}
 	}
 
 	function handleResultClick(result: SearchResult) {

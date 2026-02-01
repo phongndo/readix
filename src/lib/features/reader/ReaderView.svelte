@@ -11,7 +11,6 @@
 	import { readerStore } from '$lib/features/reader/reader.store.svelte';
 	import { page } from '$app/state';
 	import type { ReaderViewProps } from './reader.types';
-	import { calculateProgressPercentage } from '$lib/domain/book/bookRules';
 
 	let { book }: ReaderViewProps = $props();
 
@@ -21,8 +20,7 @@
 
 	let currentPage = $derived(book.currentPage);
 	let containerRef = $state<HTMLElement | null>(null);
-
-	const progress = $derived(calculateProgressPercentage({ ...book, currentPage }));
+	let pdfViewerRef = $state<{ scrollToPage: (page: number) => void } | null>(null);
 
 	const contentChunks = $derived(book.content.split('\n\n'));
 	const pages = $derived(
@@ -48,8 +46,9 @@
 	}
 
 	function handleJumpToPage(pageNum: number) {
-		// This will be implemented to scroll to specific page
-		console.log('Jump to page', pageNum);
+		if (pdfViewerRef) {
+			pdfViewerRef.scrollToPage(pageNum);
+		}
 	}
 
 	// Keyboard shortcuts setup
@@ -96,10 +95,10 @@
 				readerStore.toggleSidebar();
 			},
 			nextSearchResult: () => {
-				// TODO: Implement next search result
+				// TODO: Implement search result navigation
 			},
 			previousSearchResult: () => {
-				// TODO: Implement previous search result
+				// TODO: Implement search result navigation
 			},
 			zoomIn: () => {
 				readerStore.zoomIn();
@@ -168,6 +167,7 @@
 		<main bind:this={containerRef} class="flex-1 overflow-hidden">
 			{#if hasFile && fileUrl && page.data.userId}
 				<PdfViewer
+					bind:this={pdfViewerRef}
 					bookId={book.id}
 					userId={page.data.userId}
 					title={book.title}
