@@ -1,6 +1,6 @@
 <script lang="ts" module>
 	import { SearchX } from '@lucide/svelte';
-	import Button from '$lib/components/atoms/button/button.svelte';
+	import Button from '$lib/components/ui/button/button.svelte';
 
 	export interface EmptySearchStateProps {
 		searchQuery: string;

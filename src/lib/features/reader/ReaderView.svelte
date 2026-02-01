@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { ChevronLeft, ChevronRight } from '@lucide/svelte';
-	import Button from '$lib/components/atoms/button/button.svelte';
+	import Button from '$lib/components/ui/button/button.svelte';
 	import type { ReaderViewProps } from './reader.types';
 	import { calculateProgressPercentage } from '$lib/domain/book/bookRules';
 

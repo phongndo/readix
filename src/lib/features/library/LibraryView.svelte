@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { Plus } from '@lucide/svelte';
-	import Button from '$lib/components/atoms/button/button.svelte';
+	import Button from '$lib/components/ui/button/button.svelte';
 	import BookGrid from '$lib/components/organisms/book-grid/book-grid.svelte';
 	import LibraryToolbar from '$lib/components/organisms/library-toolbar/library-toolbar.svelte';
 	import UploadModal from '$lib/components/organisms/upload-modal/upload-modal.svelte';

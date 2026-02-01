@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { Plus } from '@lucide/svelte';
 	import { useClerkContext } from 'svelte-clerk/client';
-	import Button from '$lib/components/atoms/button/button.svelte';
+	import Button from '$lib/components/ui/button/button.svelte';
 	import StatsCards from '$lib/features/dashboard/StatsCards.svelte';
 	import ContributionCalendar from '$lib/components/organisms/contribution-calendar/contribution-calendar.svelte';
 	import RecentBooks from '$lib/features/dashboard/RecentBooks.svelte';

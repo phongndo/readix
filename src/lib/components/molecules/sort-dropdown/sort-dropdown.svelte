@@ -1,5 +1,6 @@
 <script lang="ts" module>
-	import { ChevronDown } from '@lucide/svelte';
+	import { ChevronDown, Check } from '@lucide/svelte';
+	import { Select } from 'bits-ui';
 
 	export interface SortDropdownProps {
 		sortBy: 'updated' | 'title' | 'author' | 'progress';
@@ -12,66 +13,43 @@
 		{ value: 'title', label: 'Title (A-Z)' },
 		{ value: 'author', label: 'Author (A-Z)' },
 		{ value: 'progress', label: 'Progress' }
-	] as const;
+	];
 </script>
 
 <script lang="ts">
 	let { sortBy, onChange, class: className }: SortDropdownProps = $props();
-
-	let isOpen = $state(false);
-
-	function handleSelect(value: 'updated' | 'title' | 'author' | 'progress') {
-		onChange(value);
-		isOpen = false;
-	}
-
-	function handleClickOutside(e: MouseEvent) {
-		const target = e.target as HTMLElement;
-		if (!target.closest('.sort-dropdown')) {
-			isOpen = false;
-		}
-	}
 </script>
 
-<svelte:window onclick={handleClickOutside} />
-
-<div class="relative sort-dropdown {className}">
-	<button
-		type="button"
-		onclick={() => (isOpen = !isOpen)}
-		class="inline-flex items-center gap-2 rounded-md border bg-background px-3 py-2 text-sm hover:bg-accent"
+<Select.Root
+	type="single"
+	value={sortBy}
+	onValueChange={(v) => onChange(v as 'updated' | 'title' | 'author' | 'progress')}
+	items={sortOptions}
+>
+	<Select.Trigger
+		class="inline-flex items-center justify-between gap-2 rounded-md border bg-background px-3 py-2 text-sm hover:bg-accent {className}"
 	>
 		<span>Sort: {sortOptions.find((o) => o.value === sortBy)?.label}</span>
-		<ChevronDown class="h-4 w-4" />
-	</button>
-
-	{#if isOpen}
-		<div class="absolute right-0 top-full z-50 mt-1 w-48 rounded-md border bg-popover shadow-lg">
-			<div class="py-1">
+		<ChevronDown class="h-4 w-4 opacity-50" />
+	</Select.Trigger>
+	<Select.Portal>
+		<Select.Content class="z-50 min-w-[8rem] rounded-md border bg-popover p-1 shadow-lg">
+			<Select.Viewport>
 				{#each sortOptions as option (option.value)}
-					<button
-						type="button"
-						onclick={() => handleSelect(option.value)}
-						class="flex w-full items-center justify-between px-4 py-2 text-left text-sm hover:bg-accent {sortBy ===
-						option.value
-							? 'font-medium'
-							: ''}"
+					<Select.Item
+						value={option.value}
+						label={option.label}
+						class="flex w-full cursor-pointer items-center justify-between rounded-sm px-2 py-1.5 text-sm outline-none hover:bg-accent focus:bg-accent data-[selected]:bg-accent"
 					>
-						{option.label}
-						{#if sortBy === option.value}
-							<svg
-								class="h-4 w-4"
-								viewBox="0 0 24 24"
-								fill="none"
-								stroke="currentColor"
-								stroke-width="2"
-							>
-								<path d="M5 12l5 5L20 7" />
-							</svg>
-						{/if}
-					</button>
+						{#snippet children({ selected })}
+							{option.label}
+							{#if selected}
+								<Check class="h-4 w-4" />
+							{/if}
+						{/snippet}
+					</Select.Item>
 				{/each}
-			</div>
-		</div>
-	{/if}
-</div>
+			</Select.Viewport>
+		</Select.Content>
+	</Select.Portal>
+</Select.Root>

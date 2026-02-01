@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { Plus, BookOpen, FileText } from '@lucide/svelte';
-	import Button from '$lib/components/atoms/button/button.svelte';
+	import Button from '$lib/components/ui/button/button.svelte';
 
 	let { onAddBook }: { onAddBook: () => void } = $props();
 </script>

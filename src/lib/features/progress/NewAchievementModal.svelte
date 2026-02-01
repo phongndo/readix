@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { Award, PartyPopper } from '@lucide/svelte';
-	import Button from '$lib/components/atoms/button/button.svelte';
+	import Button from '$lib/components/ui/button/button.svelte';
 
 	let {
 		newAchievements = [] as string[],

@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { X } from '@lucide/svelte';
-	import Button from '$lib/components/atoms/button/button.svelte';
+	import Button from '$lib/components/ui/button/button.svelte';
 	import FormField from '$lib/components/molecules/form-field/form-field.svelte';
 	import type { AddBookFormData } from './library.types';
 

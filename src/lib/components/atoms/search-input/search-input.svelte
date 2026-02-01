@@ -1,4 +1,6 @@
 <script lang="ts" module>
+	import Input from '$lib/components/ui/input/input.svelte';
+
 	export interface SearchInputProps {
 		value?: string;
 		placeholder?: string;
@@ -19,11 +21,10 @@
 
 	let timeoutId: ReturnType<typeof setTimeout>;
 
-	function handleInput(e: Event) {
-		const target = e.target as HTMLInputElement;
+	function handleInput(inputValue: string) {
 		clearTimeout(timeoutId);
 		timeoutId = setTimeout(() => {
-			onInput(target.value);
+			onInput(inputValue);
 		}, debounceMs);
 	}
 
@@ -34,13 +35,7 @@
 </script>
 
 <div class="relative {className}">
-	<input
-		type="text"
-		bind:value
-		{placeholder}
-		class="w-full rounded-md border bg-background px-9 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
-		oninput={handleInput}
-	/>
+	<Input type="search" bind:value {placeholder} class="pl-9" oninput={handleInput} />
 	<svg
 		class="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground"
 		xmlns="http://www.w3.org/2000/svg"
