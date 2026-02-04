@@ -44,15 +44,14 @@
 			{#each tabs as tab (tab.id)}
 				<Button
 					variant="ghost"
-					size="sm"
+					size="icon-sm"
 					onclick={() => setActiveTab(tab.id)}
-					class="inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium {activeTab ===
-					tab.id
+					class="rounded-md {activeTab === tab.id
 						? 'bg-primary text-primary-foreground'
 						: 'bg-muted text-muted-foreground hover:bg-muted/80'}"
+					title={tab.label}
 				>
 					<tab.icon class="h-4 w-4" />
-					{tab.label}
 				</Button>
 			{/each}
 		</div>
