@@ -1,10 +1,6 @@
 <script lang="ts">
 	import { MessageSquare } from '@lucide/svelte';
-	import AnnotationItem from '$lib/features/reader/components/annotation-item/annotation-item.svelte';
 	import { readerStore } from '$lib/features/reader/reader.store.svelte';
-	import { Effect } from 'effect';
-	import { deleteBookmark } from '$lib/services/bookmarkService';
-	import { toastState } from '$lib/state/toastState.svelte';
 	import type { Annotation } from '$lib/domain/reading/ReadingPosition';
 
 	export interface AnnotationSidebarProps {
@@ -24,51 +20,34 @@
 	}: AnnotationSidebarProps = $props();
 
 	const sortedAnnotations = $derived(
-		[...readerStore.annotations].sort((a: Annotation, b: Annotation) => {
-			// Sort by page first, then by creation date
-			if (a.page !== b.page) {
-				return a.page - b.page;
-			}
-			return a.createdAt.getTime() - b.createdAt.getTime();
-		})
+		[...readerStore.annotations].sort((a: Annotation, b: Annotation) => a.page - b.page)
 	);
 
-	function handleAnnotationClick(annotation: Annotation) {
-		onJumpToPage(annotation.page);
-		readerStore.setSidebarTab('annotations');
-	}
-
-	async function handleDeleteAnnotation(annotationId: string) {
-		try {
-			// Delete from database
-			await Effect.runPromise(deleteBookmark(annotationId));
-			// Remove from store
-			readerStore.removeAnnotation(annotationId);
-			toastState.showSuccess('Annotation deleted');
-		} catch (err) {
-			console.error('Failed to delete annotation:', err);
-			toastState.showError('Failed to delete annotation');
-		}
+	function handleAnnotationClick(page: number) {
+		onJumpToPage(page);
 	}
 </script>
 
-<div class="flex h-full flex-col">
+<div class="flex h-full flex-col p-4">
 	{#if sortedAnnotations.length === 0}
-		<div class="flex flex-1 flex-col items-center justify-center p-6 text-center">
+		<div class="flex flex-1 flex-col items-center justify-center text-center">
 			<MessageSquare class="mb-4 h-12 w-12 text-neutral-600" />
-			<p class="text-sm text-neutral-400">
-				No annotations yet. Select text and highlight to add one.
-			</p>
+			<p class="text-sm text-neutral-400">No annotations yet</p>
 		</div>
 	{:else}
-		<div class="flex-1 overflow-y-auto p-2">
+		<div class="flex flex-1 flex-wrap content-start gap-2 overflow-y-auto">
 			{#each sortedAnnotations as annotation (annotation.id)}
-				<AnnotationItem
-					{annotation}
-					isActive={annotation.page === currentPage}
-					onClick={() => handleAnnotationClick(annotation)}
-					onDelete={() => handleDeleteAnnotation(annotation.id)}
-				/>
+				<button
+					type="button"
+					onclick={() => handleAnnotationClick(annotation.page)}
+					class="flex h-10 w-10 items-center justify-center rounded-md transition-colors {annotation.page ===
+					currentPage
+						? 'bg-primary text-primary-foreground'
+						: 'bg-muted text-muted-foreground hover:bg-muted/80'}"
+					title="Page {annotation.page}"
+				>
+					<MessageSquare class="h-4 w-4" />
+				</button>
 			{/each}
 		</div>
 	{/if}
