@@ -165,9 +165,45 @@
 	function handleScroll(e: Event) {
 		const target = e.target as HTMLDivElement;
 		const scrollOffset = target.scrollTop;
+
+		// Calculate current page based on scroll position
+		const newPage = calculateCurrentPage(target);
+		if (newPage !== readerStore.currentPage) {
+			readerStore.setCurrentPage(newPage);
+		}
+
 		if (positionTracker) {
 			positionTracker.scheduleSaveFromScroll(scrollOffset);
 		}
+	}
+
+	function calculateCurrentPage(scrollableContainer: HTMLElement): number {
+		if (!engine) return 1;
+
+		// Get all page wrappers
+		const pageWrappers = scrollableContainer.querySelectorAll('[data-page]');
+		if (pageWrappers.length === 0) return 1;
+
+		// Find which page is most visible in the viewport
+		const containerRect = scrollableContainer.getBoundingClientRect();
+		const containerCenter = containerRect.top + containerRect.height / 2;
+
+		let closestPage = 1;
+		let closestDistance = Infinity;
+
+		pageWrappers.forEach((wrapper) => {
+			const pageNum = parseInt(wrapper.getAttribute('data-page') || '1', 10);
+			const rect = wrapper.getBoundingClientRect();
+			const pageCenter = rect.top + rect.height / 2;
+			const distance = Math.abs(pageCenter - containerCenter);
+
+			if (distance < closestDistance) {
+				closestDistance = distance;
+				closestPage = pageNum;
+			}
+		});
+
+		return closestPage;
 	}
 
 	/**

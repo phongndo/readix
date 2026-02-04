@@ -27,7 +27,8 @@
 	const hasFile = $derived(book.fileStorageId != null);
 	const fileUrl = $derived(hasFile ? `/api/files/${book.fileStorageId}` : null);
 
-	let currentPage = $derived(book.currentPage);
+	// Use reader store for reactive page tracking
+	let currentPage = $derived(readerStore.currentPage);
 	let containerRef = $state<HTMLElement | null>(null);
 	let pdfViewerRef = $state<{ scrollToPage: (page: number) => void } | null>(null);
 	let showBookmarkDialog = $state(false);
@@ -212,8 +213,8 @@
 	<ReaderToolbar
 		title={book.title}
 		author={book.author}
-		currentPage={currentPage + 1}
-		totalPages={book.totalPages}
+		{currentPage}
+		totalPages={readerStore.totalPages || book.totalPages}
 		onBack={handleExit}
 		onToggleSidebar={() => readerStore.toggleSidebar()}
 		onSearchClick={() => {
@@ -239,7 +240,7 @@
 			<ReaderSidebar
 				bookId={book.id}
 				userId={page.data.userId || ''}
-				currentPage={currentPage + 1}
+				{currentPage}
 				onJumpToPage={handleJumpToPage}
 				onClose={() => readerStore.toggleSidebar()}
 			/>
