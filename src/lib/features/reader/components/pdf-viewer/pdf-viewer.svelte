@@ -9,6 +9,7 @@
 		calculateScrollProgress,
 		restoreScrollPosition
 	} from '$lib/domain/reading/scrollPreservation';
+	import { fetchBookmarks, lookupConvexUserId } from '$lib/services/bookmarkService';
 
 	import HighlightLayer from '$lib/features/reader/components/highlight-layer/highlight-layer.svelte';
 	import AnnotationToolbar from '$lib/features/reader/components/annotation-toolbar/annotation-toolbar.svelte';
@@ -56,6 +57,18 @@
 
 			// Load saved position
 			const savedPosition = await Effect.runPromise(positionTracker.loadPosition());
+
+			// Load bookmarks
+			try {
+				const convexUser = await Effect.runPromise(lookupConvexUserId(userId));
+				if (convexUser) {
+					const bookmarks = await Effect.runPromise(fetchBookmarks(bookId, convexUser._id));
+					readerStore.loadBookmarks(bookmarks);
+				}
+			} catch (bookmarkErr) {
+				// Graceful degrade - continue without bookmarks
+				console.error('Failed to load bookmarks:', bookmarkErr);
+			}
 
 			isLoading = false;
 			readerStore.setIsLoading(false);

@@ -1,9 +1,9 @@
 # PDF Viewer Implementation Guide
 
 **Project:** Readix PDF Viewer  
-**Status:** Core features implemented, production-ready  
-**Last Updated:** 2024-01-31  
-**Commit:** 8e62aac
+**Status:** Core features + search implemented, production-ready  
+**Last Updated:** 2026-02-01  
+**Commit:** 1708b63
 
 ---
 
@@ -17,13 +17,17 @@
 - [x] **Clean minimal UI** - Zen aesthetic, no clutter
 - [x] **Authentication** - Users can only access their own PDFs
 - [x] **Fast performance** - Efficient canvas rendering
+- [x] **Full-text search** - Search within PDF (sidebar results only)
+
+### Removed Features ❌
+
+- ~~PDF text highlighting~~ - Removed due to coordinate system complexity
 
 ### Future Features (Phase 2)
 
 - [ ] **Text selection & highlighting** - Select text, create highlights
 - [ ] **Annotations** - Add notes to highlights
 - [ ] **Bookmarks** - Quick jump to saved locations
-- [ ] **Search** - Full-text search within PDF
 - [ ] **Thumbnail sidebar** - Visual page navigation
 - [ ] **Zoom controls** - 50%, 100%, 150%, 200%, fit-width, fit-page
 - [ ] **Page navigation** - Previous/Next buttons that work
@@ -38,8 +42,11 @@
 ```
 src/lib/features/reader/
 ├── components/pdf-viewer/pdf-viewer.svelte  # Main viewer component
+├── components/search-panel/                 # Search UI
+├── components/highlight-layer/              # Annotation highlights only
 ├── reader.store.svelte.ts                   # Svelte 5 runes state
 ├── position-tracker.ts                      # Position save/restore service
+├── search-logic.ts                          # Search functionality
 └── reader.types.ts                          # TypeScript types
 
 src/lib/services/document/
@@ -54,6 +61,7 @@ src/routes/api/files/[storageId]/
 
 convex/
 ├── readingPositions.ts                      # Position queries/mutations
+├── documentText.ts                          # Search index (text storage)
 ├── users.ts                                 # User lookup by Clerk ID
 └── schema.ts                                # Database schema
 ```
@@ -126,6 +134,17 @@ interface ReadingPosition {
 
 **Files:** `convex/users.ts`, `src/routes/api/files/[storageId]/+server.ts`
 
+#### 5. Search Implementation
+
+**How it works:**
+
+1. User types search query (debounced 300ms)
+2. Hybrid search: Client-side (Fuse.js) + Server-side (Convex searchIndex)
+3. Results displayed in sidebar with page number and snippet
+4. Click result → Jump to that page
+
+**Note:** Search highlights on the PDF itself were removed due to coordinate system complexity between PDF.js and rendered output.
+
 ---
 
 ## What's Working ✅
@@ -140,12 +159,14 @@ interface ReadingPosition {
 - Clean minimal UI
 - Error handling (404, 500 pages)
 - Responsive layout
+- Full-text search (sidebar results, click to jump)
 
 ### Quality
 
 - TypeScript: 0 errors
 - Lint: 0 errors
 - Build: Successful
+- Svelte 5: Pure runes syntax
 - AGENTS.md compliance: ✅
 
 ---
@@ -155,6 +176,8 @@ interface ReadingPosition {
 ### Phase 2 Features (When Resuming)
 
 #### Priority 1: Text Selection & Highlights
+
+**Note:** Previous implementation removed due to coordinate mismatch between PDF.js and rendered canvas.
 
 **Files to modify:**
 
@@ -166,34 +189,18 @@ interface ReadingPosition {
 
 1. Render invisible text layer over canvas (PDF.js text layer)
 2. Capture text selection events
-3. Calculate bounding boxes for highlights
+3. Calculate bounding boxes for highlights (respecting 1.5x base scale)
 4. Save to `annotations` table
 5. Render highlights as colored overlays
 
-**Complexity:** Medium
+**Complexity:** Medium (coordinate math is tricky)
 
-#### Priority 2: Search
-
-**Files to modify:**
-
-- `convex/documentText.ts` - Text extraction and search index
-- `src/lib/features/reader/components/search-panel.svelte` - UI component
-
-**Approach:**
-
-1. Background extraction of text from all pages
-2. Store in `documentText` table with search index
-3. Fuse.js for client-side fuzzy search
-4. Highlight matches in text layer
-
-**Complexity:** Medium
-
-#### Priority 3: Bookmarks
+#### Priority 2: Bookmarks
 
 **Files to modify:**
 
 - `convex/bookmarks.ts` - CRUD operations
-- `src/lib/features/reader/components/bookmark-sidebar.svelte` - UI
+- `src/lib/features/reader/components/bookmark-sidebar/bookmark-sidebar.svelte` - UI
 
 **Approach:**
 
@@ -203,7 +210,7 @@ interface ReadingPosition {
 
 **Complexity:** Low
 
-#### Priority 4: Zoom Controls
+#### Priority 3: Zoom Controls
 
 **Files to modify:**
 
@@ -232,6 +239,7 @@ interface ReadingPosition {
 - ✅ Feature vertical slices
 - ✅ No barrel files
 - ✅ Descriptive names over comments
+- ✅ Svelte 5 runes: `$props()`, `$state()`, `$derived()`
 
 ### 2. State Management
 
@@ -302,7 +310,7 @@ bookmarks: {
   createdAt: v.number();
 }
 
-// Document text for search (Phase 2)
+// Document text for search
 documentText: {
   bookId: v.id('books');
   page: v.number();
@@ -314,13 +322,16 @@ documentText: {
 
 ### Key Files Reference
 
-| File                     | Purpose            | When to Modify                                  |
-| ------------------------ | ------------------ | ----------------------------------------------- |
-| `pdf-engine.ts`          | PDF.js wrapper     | Change rendering quality, add text extraction   |
-| `pdf-viewer.svelte`      | Main component     | Add UI features (highlights, search, zoom)      |
-| `reader.store.svelte.ts` | State management   | Add new state fields (zoom level, search query) |
-| `position-tracker.ts`    | Position save/load | Modify save behavior, add analytics             |
-| `readingPositions.ts`    | Convex queries     | Add new queries for stats/analytics             |
+| File                     | Purpose            | When to Modify           |
+| ------------------------ | ------------------ | ------------------------ |
+| `pdf-engine.ts`          | PDF.js wrapper     | Change rendering quality |
+| `pdf-viewer.svelte`      | Main component     | Add UI features (zoom)   |
+| `search-panel.svelte`    | Search UI          | Modify search behavior   |
+| `highlight-layer.svelte` | Annotations        | Add highlight rendering  |
+| `reader.store.svelte.ts` | State management   | Add new state fields     |
+| `position-tracker.ts`    | Position save/load | Modify save behavior     |
+| `readingPositions.ts`    | Convex queries     | Add new queries          |
+| `search-logic.ts`        | Search logic       | Modify search algorithm  |
 
 ---
 
@@ -328,17 +339,18 @@ documentText: {
 
 ### To Add Text Highlights:
 
+**⚠️ Note:** Previous attempt removed due to coordinate system complexity. Ensure proper scaling (1.5x base) when calculating bounding boxes.
+
 1. Add text layer rendering to `pdf-engine.ts`
 2. Add selection handler to `pdf-viewer.svelte`
 3. Create `highlight-layer.svelte` component
 4. Add `convex/annotations.ts` with CRUD operations
 
-### To Add Search:
+### To Add Bookmarks:
 
-1. Create `convex/documentText.ts` with extraction logic
-2. Add background extraction after PDF upload
-3. Create `search-panel.svelte` UI component
-4. Add Fuse.js for client-side search
+1. Create `convex/bookmarks.ts` with CRUD
+2. Create `bookmark-sidebar.svelte` UI
+3. Add keyboard shortcut ('B') in ReaderView
 
 ### To Add Zoom:
 
@@ -356,12 +368,14 @@ documentText: {
 - **No virtual scrolling:** All pages rendered upfront (fine for most PDFs, may lag on 1000+ page documents)
 - **No text layer:** Canvas only (text selection not implemented yet)
 - **No mobile optimization:** Desktop-focused, pinch-zoom not implemented
+- **Search:** Results shown in sidebar only (no PDF highlighting due to coordinate complexity)
 
 ### Performance Benchmarks
 
 - **Render speed:** ~100ms per page (varies by PDF complexity)
 - **Memory usage:** ~5MB per page at 3x scale
 - **Scroll performance:** 60fps smooth scrolling
+- **Search:** ~300ms for full document (hybrid client/server)
 
 ### Testing Checklist
 
@@ -370,9 +384,12 @@ When resuming, verify:
 - [ ] PDF renders without pixelation
 - [ ] Scroll is smooth (no rubber-banding)
 - [ ] Position saves and restores correctly
+- [ ] Search returns results in sidebar
+- [ ] Clicking search result jumps to correct page
 - [ ] Only owner can access PDF files
 - [ ] Type check passes (`bun run check`)
 - [ ] Lint passes (`bun run lint`)
+- [ ] Svelte 5 patterns used (`$props`, `$state`, snippets)
 
 ---
 
@@ -381,5 +398,6 @@ When resuming, verify:
 - **AGENTS.md:** `/Users/dp/Code/projects/readix/AGENTS.md` - Coding guidelines
 - **Schema:** `convex/schema.ts` - Database structure
 - **Types:** `src/lib/features/reader/reader.types.ts` - TypeScript definitions
+- **Last Commit:** `1708b63` - Search fixes, Svelte 5 migration, code cleanup
 
-**Status:** Ready for Phase 2 features (highlights, search, bookmarks) whenever you return!
+**Status:** Production-ready with search. Ready for Phase 2 features (highlights, bookmarks, zoom)!

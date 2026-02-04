@@ -148,6 +148,9 @@ function createReaderStore() {
 		deleteBookmark: (bookmarkId: string) => {
 			bookmarks = bookmarks.filter((b) => b.id !== bookmarkId);
 		},
+		removeBookmark: (bookmarkId: string) => {
+			bookmarks = bookmarks.filter((b) => b.id !== bookmarkId);
+		},
 		setSearchQuery: (query: string) => {
 			searchQuery = query;
 		},

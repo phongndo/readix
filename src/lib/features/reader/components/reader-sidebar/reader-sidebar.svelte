@@ -1,6 +1,7 @@
 <script lang="ts" module>
 	import Button from '$lib/components/ui/button/button.svelte';
 	import SearchPanel from '$lib/features/reader/components/search-panel/search-panel.svelte';
+	import BookmarkSidebar from '$lib/features/reader/components/bookmark-sidebar/bookmark-sidebar.svelte';
 	import { readerStore } from '$lib/features/reader/reader.store.svelte';
 	import { Bookmark, Search, MessageSquare, X } from '@lucide/svelte';
 
@@ -20,15 +21,7 @@
 </script>
 
 <script lang="ts">
-	let {
-		bookId,
-		// eslint-disable-next-line @typescript-eslint/no-unused-vars
-		userId: _userId,
-		// eslint-disable-next-line @typescript-eslint/no-unused-vars
-		currentPage: _currentPage,
-		onJumpToPage,
-		onClose
-	}: ReaderSidebarProps = $props();
+	let { bookId, userId, currentPage, onJumpToPage, onClose }: ReaderSidebarProps = $props();
 
 	const tabs: TabConfig[] = [
 		{ id: 'bookmarks', label: 'Bookmarks', icon: Bookmark },
@@ -70,13 +63,7 @@
 	<!-- Tab content -->
 	<div class="flex-1 overflow-hidden">
 		{#if activeTab === 'bookmarks'}
-			<!-- bookmark-sidebar component will go here -->
-			<div class="flex h-full items-center justify-center p-4 text-muted-foreground">
-				<div class="text-center">
-					<Bookmark class="mx-auto mb-2 h-8 w-8 opacity-50" />
-					<p class="text-sm">Bookmarks coming soon</p>
-				</div>
-			</div>
+			<BookmarkSidebar {bookId} {userId} {currentPage} {onJumpToPage} />
 		{:else if activeTab === 'search'}
 			<SearchPanel {bookId} {onJumpToPage} />
 		{:else if activeTab === 'annotations'}
