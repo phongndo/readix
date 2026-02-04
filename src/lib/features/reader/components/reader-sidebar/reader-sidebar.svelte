@@ -2,6 +2,7 @@
 	import Button from '$lib/components/ui/button/button.svelte';
 	import SearchPanel from '$lib/features/reader/components/search-panel/search-panel.svelte';
 	import BookmarkSidebar from '$lib/features/reader/components/bookmark-sidebar/bookmark-sidebar.svelte';
+	import AnnotationSidebar from '$lib/features/reader/components/annotation-sidebar/annotation-sidebar.svelte';
 	import { readerStore } from '$lib/features/reader/reader.store.svelte';
 	import { Bookmark, Search, MessageSquare, X } from '@lucide/svelte';
 
@@ -67,13 +68,7 @@
 		{:else if activeTab === 'search'}
 			<SearchPanel {bookId} {onJumpToPage} />
 		{:else if activeTab === 'annotations'}
-			<!-- Annotations list will go here -->
-			<div class="flex h-full items-center justify-center p-4 text-muted-foreground">
-				<div class="text-center">
-					<MessageSquare class="mx-auto mb-2 h-8 w-8 opacity-50" />
-					<p class="text-sm">Annotations coming soon</p>
-				</div>
-			</div>
+			<AnnotationSidebar {bookId} {userId} {currentPage} {onJumpToPage} />
 		{/if}
 	</div>
 </div>
