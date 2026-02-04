@@ -30,6 +30,7 @@ function createReaderStore() {
 	let isToolbarVisible = $state(true);
 	let isSidebarOpen = $state(false);
 	let sidebarTab = $state<'bookmarks' | 'annotations' | 'search'>('bookmarks');
+	let sidebarPosition = $state<'left' | 'right'>('right');
 
 	// Data
 	let bookmarks = $state<Bookmark[]>([]);
@@ -79,6 +80,9 @@ function createReaderStore() {
 		},
 		get sidebarTab() {
 			return sidebarTab;
+		},
+		get sidebarPosition() {
+			return sidebarPosition;
 		},
 		get bookmarks() {
 			return bookmarks;
@@ -138,6 +142,9 @@ function createReaderStore() {
 		},
 		setSidebarTab: (tab: 'bookmarks' | 'annotations' | 'search') => {
 			sidebarTab = tab;
+		},
+		setSidebarPosition: (position: 'left' | 'right') => {
+			sidebarPosition = position;
 		},
 		setBookmarks: (b: Bookmark[]) => {
 			bookmarks = b;
@@ -220,6 +227,7 @@ function createReaderStore() {
 			isToolbarVisible = true;
 			isSidebarOpen = false;
 			sidebarTab = 'bookmarks';
+			sidebarPosition = 'right';
 			bookmarks = [];
 			annotations = [];
 			searchQuery = '';

@@ -12,6 +12,7 @@
 		currentPage: number;
 		onJumpToPage: (page: number) => void;
 		onClose: () => void;
+		position?: 'left' | 'right';
 	}
 
 	interface TabConfig {
@@ -22,7 +23,14 @@
 </script>
 
 <script lang="ts">
-	let { bookId, userId, currentPage, onJumpToPage, onClose }: ReaderSidebarProps = $props();
+	let {
+		bookId,
+		userId,
+		currentPage,
+		onJumpToPage,
+		onClose,
+		position = 'right'
+	}: ReaderSidebarProps = $props();
 
 	const tabs: TabConfig[] = [
 		{ id: 'bookmarks', label: 'Bookmarks', icon: Bookmark },
@@ -35,11 +43,15 @@
 	}
 
 	const activeTab = $derived(readerStore.sidebarTab);
+
+	// Border class based on position
+	const borderClass = $derived(position === 'left' ? 'border-r' : 'border-l');
 </script>
 
-<div class="flex h-full w-80 flex-col border-r border-border bg-background">
-	<!-- Header with tabs and close button -->
-	<div class="flex items-center justify-between border-b border-border p-4">
+<div class="flex h-full w-80 flex-col {borderClass} border-border bg-background">
+	<!-- Header with centered tabs and close button -->
+	<div class="relative flex items-center justify-center border-b border-border p-4">
+		<!-- Tab icons centered -->
 		<div class="flex gap-1">
 			{#each tabs as tab (tab.id)}
 				<Button
@@ -55,7 +67,14 @@
 				</Button>
 			{/each}
 		</div>
-		<Button variant="ghost" size="icon-sm" onclick={onClose} class="h-8 w-8 text-muted-foreground">
+
+		<!-- Close button positioned absolutely on the right -->
+		<Button
+			variant="ghost"
+			size="icon-sm"
+			onclick={onClose}
+			class="absolute right-4 h-8 w-8 text-muted-foreground"
+		>
 			<X class="h-4 w-4" />
 		</Button>
 	</div>

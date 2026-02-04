@@ -236,16 +236,6 @@
 
 	<!-- Main content area with optional sidebar -->
 	<div class="flex flex-1 overflow-hidden">
-		{#if readerStore.isSidebarOpen}
-			<ReaderSidebar
-				bookId={book.id}
-				userId={page.data.userId || ''}
-				{currentPage}
-				onJumpToPage={handleJumpToPage}
-				onClose={() => readerStore.toggleSidebar()}
-			/>
-		{/if}
-
 		<!-- Reading area -->
 		<main bind:this={containerRef} class="flex-1 overflow-hidden">
 			{#if hasFile && fileUrl && page.data.userId}
@@ -268,5 +258,17 @@
 				</div>
 			{/if}
 		</main>
+
+		<!-- Sidebar on the right -->
+		{#if readerStore.isSidebarOpen}
+			<ReaderSidebar
+				bookId={book.id}
+				userId={page.data.userId || ''}
+				{currentPage}
+				onJumpToPage={handleJumpToPage}
+				onClose={() => readerStore.toggleSidebar()}
+				position={readerStore.sidebarPosition}
+			/>
+		{/if}
 	</div>
 </div>
