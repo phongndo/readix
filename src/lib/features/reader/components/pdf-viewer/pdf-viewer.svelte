@@ -10,8 +10,11 @@
 		restoreScrollPosition
 	} from '$lib/domain/reading/scrollPreservation';
 	import { fetchBookmarks, lookupConvexUserId } from '$lib/services/bookmarkService';
+	import { fetchAnnotations, createAnnotation } from '$lib/services/annotationService';
+	import { toastState } from '$lib/state/toastState.svelte';
 
 	import HighlightLayer from '$lib/features/reader/components/highlight-layer/highlight-layer.svelte';
+	import SearchHighlightLayer from '$lib/features/reader/components/search-highlight-layer/search-highlight-layer.svelte';
 	import AnnotationToolbar from '$lib/features/reader/components/annotation-toolbar/annotation-toolbar.svelte';
 	import type { PdfViewerProps, TextPosition } from '$lib/features/reader/reader.types';
 	import type { Annotation } from '$lib/domain/reading/ReadingPosition';
@@ -58,16 +61,19 @@
 			// Load saved position
 			const savedPosition = await Effect.runPromise(positionTracker.loadPosition());
 
-			// Load bookmarks
+			// Load bookmarks and annotations
 			try {
 				const convexUser = await Effect.runPromise(lookupConvexUserId(userId));
 				if (convexUser) {
 					const bookmarks = await Effect.runPromise(fetchBookmarks(bookId, convexUser._id));
 					readerStore.loadBookmarks(bookmarks);
+
+					const annotations = await Effect.runPromise(fetchAnnotations(bookId, convexUser._id));
+					readerStore.loadAnnotations(annotations);
 				}
-			} catch (bookmarkErr) {
-				// Graceful degrade - continue without bookmarks
-				console.error('Failed to load bookmarks:', bookmarkErr);
+			} catch (dataErr) {
+				// Graceful degrade - continue without bookmarks/annotations
+				console.error('Failed to load data:', dataErr);
 			}
 
 			isLoading = false;
@@ -156,10 +162,69 @@
 				await Effect.runPromise(
 					engine!.renderTextLayer(pageNum, textLayerContainer, 1.5, readerStore.zoom)
 				);
+
+				// Setup text selection listener for this page
+				setupTextSelectionListener(textLayerContainer, pageNum);
 			} catch (err) {
 				console.error(`Failed to render text layer for page ${pageNum}:`, err);
 			}
 		}
+	}
+
+	function setupTextSelectionListener(textLayerContainer: HTMLElement, pageNum: number) {
+		// Listen for mouseup to detect text selection
+		textLayerContainer.addEventListener('mouseup', () => {
+			handleTextSelection(pageNum);
+		});
+	}
+
+	function handleTextSelection(pageNum: number) {
+		const selection = window.getSelection();
+		if (!selection || selection.isCollapsed) {
+			// No text selected or selection cleared
+			return;
+		}
+
+		const selectedTextValue = selection.toString().trim();
+		if (!selectedTextValue) return;
+
+		// Get the range and calculate bounding boxes
+		const range = selection.getRangeAt(0);
+		const rects = Array.from(range.getClientRects());
+
+		// Get the container's position for relative coordinates
+		const textLayerContainer = textLayerContainers.get(pageNum);
+		if (!textLayerContainer) return;
+
+		const containerRect = textLayerContainer.getBoundingClientRect();
+		const currentZoom = readerStore.zoom;
+		const baseScale = 1.5;
+
+		// Convert DOM coordinates to PDF coordinates
+		const boundingBoxes = rects.map((rect) => ({
+			x: (rect.left - containerRect.left) / (baseScale * currentZoom),
+			y: (rect.top - containerRect.top) / (baseScale * currentZoom),
+			width: rect.width / (baseScale * currentZoom),
+			height: rect.height / (baseScale * currentZoom)
+		}));
+
+		// Store selection data
+		selectedText = selectedTextValue;
+		selectedPosition = {
+			startOffset: 0,
+			endOffset: selectedTextValue.length,
+			boundingBoxes
+		};
+		selectedPage = pageNum;
+
+		// Calculate toolbar position
+		const firstRect = rects[0];
+		toolbarPosition = {
+			x: firstRect.left + firstRect.width / 2 - 150,
+			y: firstRect.top - 60
+		};
+
+		showAnnotationToolbar = true;
 	}
 
 	function handleScroll(e: Event) {
@@ -238,12 +303,15 @@
 		showAnnotationToolbar = true;
 	}
 
-	function handleHighlight(color: string) {
+	async function handleHighlight(color: string) {
 		if (!selectedPosition || !selectedText) return;
 
 		const now = Date.now();
+		const tempId = `temp-${now}`;
+
+		// Create temp annotation for immediate UI feedback
 		const annotation: Annotation = {
-			id: `temp-${now}`,
+			id: tempId,
 			bookId,
 			userId,
 			type: 'highlight',
@@ -256,8 +324,45 @@
 			updatedAt: new Date(now)
 		};
 
+		// Add to store immediately for UI feedback
 		readerStore.addAnnotation(annotation);
 		clearSelection();
+
+		// Persist to database
+		try {
+			const convexUser = await Effect.runPromise(lookupConvexUserId(userId));
+			if (!convexUser) {
+				toastState.showError('Not authenticated');
+				return;
+			}
+
+			const annotationId = await Effect.runPromise(
+				createAnnotation({
+					bookId,
+					userId: convexUser._id,
+					type: 'highlight',
+					page: selectedPage,
+					position: selectedPosition,
+					highlightedText: selectedText,
+					color
+				})
+			);
+
+			// Update with real ID
+			// Remove temp annotation and add with real ID
+			readerStore.removeAnnotation(tempId);
+			readerStore.addAnnotation({
+				...annotation,
+				id: annotationId
+			});
+
+			toastState.showSuccess('Highlight saved');
+		} catch (err) {
+			console.error('Failed to save highlight:', err);
+			toastState.showError('Failed to save highlight');
+			// Remove from store if save failed
+			readerStore.removeAnnotation(tempId);
+		}
 	}
 
 	function handleAddNote() {
@@ -327,6 +432,11 @@
 					<HighlightLayer
 						page={pageNum}
 						annotations={readerStore.annotations}
+						scale={readerStore.zoom}
+					/>
+					<SearchHighlightLayer
+						page={pageNum}
+						searchResults={readerStore.searchResults}
 						scale={readerStore.zoom}
 					/>
 				{/if}
