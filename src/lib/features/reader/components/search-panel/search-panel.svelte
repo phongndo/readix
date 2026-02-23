@@ -16,48 +16,67 @@
 <script lang="ts">
 	let { bookId, onJumpToPage }: SearchPanelProps = $props();
 
-	// Debounce timer for search
-	let searchTimeout: ReturnType<typeof setTimeout> | null = null;
+	let searchRequestId = 0;
 
 	function handleSearchInput(query: string) {
 		readerStore.setSearchQuery(query);
-
-		// Clear previous timeout
-		if (searchTimeout) {
-			clearTimeout(searchTimeout);
-		}
-
-		// Debounce search by 300ms
-		searchTimeout = setTimeout(() => {
-			performSearch(query);
-		}, 300);
+		void performSearch(query, true);
 	}
 
-	async function performSearch(query: string) {
-		if (!query.trim() || query.length < 3) {
+	async function performSearch(query: string, showLoadingState: boolean) {
+		const requestId = ++searchRequestId;
+		const normalizedQuery = query.trim();
+
+		if (!normalizedQuery || normalizedQuery.length < 2) {
 			readerStore.setSearchResults([]);
+			readerStore.setIsSearching(false);
 			return;
 		}
 
-		readerStore.setIsSearching(true);
+		if (showLoadingState) {
+			readerStore.setIsSearching(true);
+		}
 
 		try {
 			const results = await Effect.runPromise(
 				hybridSearch(
 					bookId as Id<'books'>,
-					query,
+					normalizedQuery,
 					readerStore.searchIndexEntries,
 					readerStore.searchIndex
 				)
 			);
+
+			if (requestId !== searchRequestId) {
+				return;
+			}
 			readerStore.setSearchResults(results);
 		} catch (err) {
+			if (requestId !== searchRequestId) {
+				return;
+			}
 			console.error('Search failed:', err);
 			readerStore.setSearchResults([]);
 		} finally {
-			readerStore.setIsSearching(false);
+			if (requestId === searchRequestId) {
+				readerStore.setIsSearching(false);
+			}
 		}
 	}
+
+	$effect(() => {
+		const query = readerStore.searchQuery;
+		const indexedPageCount = readerStore.searchIndexEntries.length;
+		if (query.trim().length < 2 || indexedPageCount === 0) return;
+
+		const timeoutId = setTimeout(() => {
+			void performSearch(query, false);
+		}, 150);
+
+		return () => {
+			clearTimeout(timeoutId);
+		};
+	});
 
 	function handleResultClick(result: SearchResult) {
 		const index = readerStore.searchResults.findIndex(
@@ -72,41 +91,6 @@
 	function truncateText(text: string, maxLength: number = 100): string {
 		if (text.length <= maxLength) return text;
 		return text.substring(0, maxLength) + '...';
-	}
-
-	function toHighlightedSegments(
-		text: string,
-		ranges: Array<{ start: number; end: number }>
-	): Array<{ text: string; highlighted: boolean }> {
-		if (ranges.length === 0) {
-			return [{ text, highlighted: false }];
-		}
-
-		const segments: Array<{ text: string; highlighted: boolean }> = [];
-		let cursor = 0;
-
-		for (const range of ranges) {
-			if (range.start > cursor) {
-				segments.push({
-					text: text.slice(cursor, range.start),
-					highlighted: false
-				});
-			}
-			segments.push({
-				text: text.slice(range.start, range.end),
-				highlighted: true
-			});
-			cursor = range.end;
-		}
-
-		if (cursor < text.length) {
-			segments.push({
-				text: text.slice(cursor),
-				highlighted: false
-			});
-		}
-
-		return segments.filter((segment) => segment.text.length > 0);
 	}
 
 	const displayedResults = $derived(readerStore.searchResults.slice(0, 20));
@@ -148,8 +132,6 @@
 			<div class="space-y-2">
 				{#each displayedResults as result, index (result.page + '-' + result.score)}
 					{@const snippet = truncateText(result.text)}
-					{@const ranges = result.matchRanges || []}
-					{@const segments = toHighlightedSegments(snippet, ranges)}
 					<button
 						type="button"
 						onclick={() => handleResultClick(result)}
@@ -159,15 +141,7 @@
 							: ''}"
 					>
 						<div class="mb-1 text-xs font-medium text-muted-foreground">Page {result.page}</div>
-						<p class="text-sm leading-relaxed text-foreground">
-							{#each segments as segment, segmentIndex (`${result.page}-${index}-${segmentIndex}`)}
-								{#if segment.highlighted}
-									<mark>{segment.text}</mark>
-								{:else}
-									{segment.text}
-								{/if}
-							{/each}
-						</p>
+						<p class="text-sm leading-relaxed text-foreground">{snippet}</p>
 					</button>
 				{/each}
 				{#if readerStore.searchResults.length > 20}

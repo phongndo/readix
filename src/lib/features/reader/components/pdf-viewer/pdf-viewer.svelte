@@ -158,6 +158,8 @@
 		renderManager = null;
 		engine?.cleanup();
 		engine = null;
+		textLayerContainers.clear();
+		pageTextCache.clear();
 		initialized = false;
 	});
 

@@ -109,32 +109,106 @@ function findMatchRanges(text: string, query: string): Array<{ start: number; en
 }
 
 /**
- * Perform client-side search using Fuse.js
+ * Normalize query into lowercase phrase + terms.
  */
-export function searchClientSide(
-	query: string,
-	searchIndex: Fuse<SearchIndexEntry>
-): SearchResult[] {
-	if (!query.trim() || query.length < 3) {
+function normalizeQuery(query: string): { normalizedPhrase: string; queryTerms: string[] } {
+	const normalizedPhrase = query.trim().toLowerCase();
+	const queryTerms = normalizedPhrase.split(/\s+/).filter((word) => word.length >= 2);
+	return { normalizedPhrase, queryTerms };
+}
+
+/**
+ * Deterministic exact matching on currently indexed pages.
+ * Prioritizes full phrase hits, then all-terms hits.
+ */
+function searchClientSideExact(query: string, loadedPages: SearchIndexEntry[]): SearchResult[] {
+	const { normalizedPhrase, queryTerms } = normalizeQuery(query);
+	if (!normalizedPhrase || queryTerms.length === 0) {
+		return [];
+	}
+
+	const results: SearchResult[] = [];
+
+	for (const page of loadedPages) {
+		const lowerText = page.text.toLowerCase();
+		const phraseIndex = lowerText.indexOf(normalizedPhrase);
+		const hasAllTerms = queryTerms.every((term) => lowerText.includes(term));
+		if (phraseIndex === -1 && !hasAllTerms) continue;
+
+		const firstTermIndex = queryTerms
+			.map((term) => lowerText.indexOf(term))
+			.filter((index) => index >= 0)
+			.sort((a, b) => a - b)[0];
+		const bestIndex = phraseIndex >= 0 ? phraseIndex : (firstTermIndex ?? 0);
+		const matchedLength = phraseIndex >= 0 ? normalizedPhrase.length : (queryTerms[0]?.length ?? 1);
+
+		const { snippet, matchRanges } = extractSnippet(page.text, query, [
+			[bestIndex, bestIndex + matchedLength - 1]
+		]);
+		const scoreBase = phraseIndex >= 0 ? 0 : 0.5;
+		const score = scoreBase + bestIndex / Math.max(1, page.text.length);
+
+		results.push({
+			page: page.page,
+			text: snippet,
+			matchRanges,
+			score
+		});
+	}
+
+	return results.sort((a, b) => a.score - b.score || a.page - b.page).slice(0, 20);
+}
+
+/**
+ * Fuzzy fallback for typo-tolerant search.
+ */
+function searchClientSideFuzzy(query: string, searchIndex: Fuse<SearchIndexEntry>): SearchResult[] {
+	if (!query.trim() || query.trim().length < 3) {
 		return [];
 	}
 
 	const results = searchIndex.search(query);
-
 	return results.slice(0, 20).map((result) => {
 		const item = result.item;
 		const matches = result.matches?.[0];
 		const indices = matches?.indices;
-
 		const { snippet, matchRanges } = extractSnippet(item.text, query, indices);
-
 		return {
 			page: item.page,
 			text: snippet,
 			matchRanges,
-			score: result.score ?? 1
+			score: (result.score ?? 1) + 0.15
 		};
 	});
+}
+
+/**
+ * Perform client-side search with exact-first + fuzzy fallback.
+ */
+export function searchClientSide(
+	query: string,
+	loadedPages: SearchIndexEntry[],
+	searchIndex: Fuse<SearchIndexEntry> | null
+): SearchResult[] {
+	const exactResults = searchClientSideExact(query, loadedPages);
+	const fuzzyResults = searchIndex ? searchClientSideFuzzy(query, searchIndex) : [];
+
+	const seenPages = new Set<number>();
+	const merged: SearchResult[] = [];
+
+	for (const result of exactResults) {
+		if (seenPages.has(result.page)) continue;
+		seenPages.add(result.page);
+		merged.push(result);
+	}
+
+	for (const result of fuzzyResults) {
+		if (seenPages.has(result.page)) continue;
+		seenPages.add(result.page);
+		merged.push(result);
+	}
+
+	return merged.sort((a, b) => a.score - b.score || a.page - b.page).slice(0, 20);
 }
 
 /**
@@ -187,10 +261,7 @@ export function hybridSearch(
 ): Effect.Effect<SearchResult[], Error, never> {
 	return Effect.gen(function* () {
 		// Step 1: Client-side search (fast, works offline)
-		let clientResults: SearchResult[] = [];
-		if (searchIndex && query.trim().length >= 3) {
-			clientResults = searchClientSide(query, searchIndex);
-		}
+		const clientResults = searchClientSide(query, loadedPages, searchIndex);
 
 		// Step 2: If we have few client results, search server-side
 		let serverResults: SearchResult[] = [];
