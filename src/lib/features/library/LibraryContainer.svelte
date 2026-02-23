@@ -2,13 +2,17 @@
 	import { SignedIn } from 'svelte-clerk';
 	import LibraryView from '$lib/features/library/LibraryView.svelte';
 	import { libraryState } from '$lib/state/libraryState.svelte';
-	import { convexLibraryStore } from '$lib/state/convexLibraryStore.svelte';
-	import { addBook, removeBook } from '$lib/features/library/library.logic';
-	import { uploadBookWithFile } from '$lib/services/bookService';
+	import {
+		deleteBook,
+		fetchDeletePreview,
+		uploadBookWithFile,
+		type DeletePreview
+	} from '$lib/services/bookService';
 	import { Effect } from 'effect';
 	import { browser } from '$app/environment';
 	import { page } from '$app/state';
 	import type { Book } from '$lib/domain/book/Book';
+	import type { UploadFormData } from '$lib/components/organisms/upload-modal/upload-modal.svelte';
 
 	let {
 		data
@@ -18,103 +22,80 @@
 		};
 	} = $props();
 
-	// Initialize with server data on load
+	let isMutating = $state(false);
+	let requestError = $state<string | null>(null);
+
 	$effect(() => {
 		if (browser && data.books) {
 			libraryState.setBooks(data.books);
-			convexLibraryStore.clear();
 		}
 	});
 
-	// One-time fetch from Convex when userId is available
-	let initialFetchDone = $state(false);
-	$effect(() => {
-		if (!browser || initialFetchDone) return;
-
+	async function handleUploadBook(formData: UploadFormData): Promise<void> {
 		const userId = page.data.userId;
-		if (userId) {
-			// Initial fetch from Convex (manual, no polling)
-			convexLibraryStore.fetchBooks(userId);
-			initialFetchDone = true;
+		if (!userId) {
+			throw new Error('Not authenticated');
 		}
-	});
 
-	$effect(() => {
-		if (!browser) return;
+		if (!formData.file) {
+			throw new Error('A PDF file is required');
+		}
 
-		const addHandler = (e: Event) => handleAddBook(e as CustomEvent);
-		const uploadHandler = (e: Event) => handleUploadBook(e as CustomEvent);
-		const deleteHandler = (e: Event) => handleDeleteBook(e as CustomEvent);
-
-		document.addEventListener('addbook', addHandler);
-		document.addEventListener('uploadbook', uploadHandler);
-		document.addEventListener('deletebook', deleteHandler);
-
-		return () => {
-			document.removeEventListener('addbook', addHandler);
-			document.removeEventListener('uploadbook', uploadHandler);
-			document.removeEventListener('deletebook', deleteHandler);
-		};
-	});
-
-	async function handleAddBook(e: CustomEvent) {
-		const userId = page.data.userId;
-		if (!userId) return;
-
+		requestError = null;
+		isMutating = true;
 		try {
-			await addBook(userId, e.detail);
-			// Manual refresh after adding book
-			await convexLibraryStore.refresh(userId);
-		} catch (error) {
-			console.error('Failed to add book:', error);
-		}
-	}
-
-	async function handleUploadBook(e: CustomEvent) {
-		const userId = page.data.userId;
-		if (!userId) return;
-
-		const { file, title, author, description, coverUrl, documentType } = e.detail;
-
-		if (!file) {
-			await addBook(userId, { title, author, description, coverUrl, totalPages: 0, content: '' });
-			return;
-		}
-
-		const effect = uploadBookWithFile(userId, file, {
-			title,
-			author,
-			description,
-			coverUrl,
-			documentType
-		});
-
-		await Effect.runPromise(
-			effect.pipe(
-				Effect.tap(() => {
-					console.log('[LibraryContainer] Book uploaded successfully');
-					// Manual refresh after upload
-					convexLibraryStore.refresh(userId);
-				}),
-				Effect.catchAll((error) => {
-					console.error('Failed to upload book:', error);
-					alert('Failed to upload book. Please try again.');
-					return Effect.succeed(undefined);
+			const createdBook = await Effect.runPromise(
+				uploadBookWithFile(userId, formData.file, {
+					title: formData.title,
+					author: formData.author,
+					description: formData.description,
+					coverUrl: formData.coverUrl
 				})
-			)
-		);
+			);
+			libraryState.addBook(createdBook);
+		} catch (error) {
+			const message = error instanceof Error ? error.message : 'Failed to upload book';
+			requestError = message;
+			libraryState.setError(message);
+			throw new Error(message);
+		} finally {
+			isMutating = false;
+		}
 	}
 
-	async function handleDeleteBook(e: CustomEvent) {
+	async function handleDeleteBook(book: Book): Promise<void> {
 		const userId = page.data.userId;
-		if (!userId) return;
+		if (!userId) {
+			throw new Error('Not authenticated');
+		}
+
+		requestError = null;
+		isMutating = true;
+		try {
+			await Effect.runPromise(deleteBook(book.id, userId));
+			libraryState.removeBook(book.id);
+		} catch (error) {
+			const message = error instanceof Error ? error.message : 'Failed to delete book';
+			requestError = message;
+			libraryState.setError(message);
+			throw new Error(message);
+		} finally {
+			isMutating = false;
+		}
+	}
+
+	async function handleGetDeletePreview(bookId: string): Promise<DeletePreview> {
+		const userId = page.data.userId;
+		if (!userId) {
+			throw new Error('Not authenticated');
+		}
 
 		try {
-			await removeBook(e.detail.bookId, userId);
-			// Manual refresh after deletion
-			await convexLibraryStore.refresh(userId);
+			return await Effect.runPromise(fetchDeletePreview(bookId, userId));
 		} catch (error) {
-			console.error('Failed to delete book:', error);
+			const message = error instanceof Error ? error.message : 'Failed to load delete preview';
+			requestError = message;
+			throw new Error(message);
 		}
 	}
 </script>
@@ -122,9 +103,12 @@
 <SignedIn>
 	<div class="container mx-auto max-w-6xl p-4">
 		<LibraryView
-			books={convexLibraryStore.hasData ? convexLibraryStore.books : libraryState.state.books}
-			isLoading={convexLibraryStore.isLoading || libraryState.state.isLoading}
-			error={convexLibraryStore.error || libraryState.state.error}
+			books={libraryState.state.books}
+			isLoading={libraryState.state.isLoading || isMutating}
+			error={requestError || libraryState.state.error}
+			onUploadBook={handleUploadBook}
+			onDeleteBook={handleDeleteBook}
+			onGetDeletePreview={handleGetDeletePreview}
 		/>
 	</div>
 </SignedIn>

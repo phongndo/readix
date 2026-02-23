@@ -115,6 +115,7 @@ export default defineSchema({
 		scrollOffset: v.number(),
 		timestamp: v.number()
 	})
+		.index('by_book', ['bookId'])
 		.index('by_book_user', ['bookId', 'userId'])
 		.index('by_user', ['userId']),
 
@@ -135,6 +136,7 @@ export default defineSchema({
 		),
 		createdAt: v.number()
 	})
+		.index('by_book', ['bookId'])
 		.index('by_book_user', ['bookId', 'userId'])
 		.index('by_book_page', ['bookId', 'page']),
 
@@ -162,6 +164,7 @@ export default defineSchema({
 		createdAt: v.number(),
 		updatedAt: v.number()
 	})
+		.index('by_book', ['bookId'])
 		.index('by_book_user', ['bookId', 'userId'])
 		.index('by_book_page', ['bookId', 'page']),
 

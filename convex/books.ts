@@ -113,37 +113,229 @@ export const updateProgress = mutation({
 	}
 });
 
+export const getDeletePreview = query({
+	args: { bookId: v.id('books'), userId: v.string() },
+	handler: async (ctx, args) => {
+		const book = await ctx.db.get(args.bookId);
+		if (!book) return null;
+
+		const user = await ctx.db
+			.query('users')
+			.withIndex('by_clerk_id', (q) => q.eq('clerkId', args.userId))
+			.first();
+
+		if (!user || user._id !== book.userId) {
+			return null;
+		}
+
+		const [
+			bookContentRows,
+			documentTextRows,
+			readingPositionRows,
+			bookmarkRows,
+			annotationRows,
+			readingSessionRows
+		] = await Promise.all([
+			ctx.db
+				.query('bookContent')
+				.withIndex('by_book', (q) => q.eq('bookId', args.bookId))
+				.collect(),
+			ctx.db
+				.query('documentText')
+				.withIndex('by_book', (q) => q.eq('bookId', args.bookId))
+				.collect(),
+			ctx.db
+				.query('readingPositions')
+				.withIndex('by_book', (q) => q.eq('bookId', args.bookId))
+				.collect(),
+			ctx.db
+				.query('bookmarks')
+				.withIndex('by_book', (q) => q.eq('bookId', args.bookId))
+				.collect(),
+			ctx.db
+				.query('annotations')
+				.withIndex('by_book', (q) => q.eq('bookId', args.bookId))
+				.collect(),
+			ctx.db
+				.query('readingSessions')
+				.withIndex('by_book', (q) => q.eq('bookId', args.bookId))
+				.collect()
+		]);
+
+		// Only include user-owned records for user-scoped tables.
+		const readingPositions = readingPositionRows.filter((row) => row.userId === user._id);
+		const bookmarks = bookmarkRows.filter((row) => row.userId === user._id);
+		const annotations = annotationRows.filter((row) => row.userId === user._id);
+		const readingSessions = readingSessionRows.filter((row) => row.userId === user._id);
+
+		const counts = {
+			bookContent: bookContentRows.length,
+			documentText: documentTextRows.length,
+			readingPositions: readingPositions.length,
+			bookmarks: bookmarks.length,
+			annotations: annotations.length,
+			readingSessions: readingSessions.length,
+			fileStorage: book.fileStorageId ? 1 : 0
+		};
+
+		return {
+			bookId: args.bookId,
+			title: book.title,
+			fileName: book.fileName || null,
+			hasStoredFile: book.fileStorageId != null,
+			counts,
+			totalRecords:
+				counts.bookContent +
+				counts.documentText +
+				counts.readingPositions +
+				counts.bookmarks +
+				counts.annotations +
+				counts.readingSessions +
+				counts.fileStorage
+		};
+	}
+});
+
 export const remove = mutation({
 	args: { bookId: v.id('books'), userId: v.string() },
 	handler: async (ctx, args) => {
 		const book = await ctx.db.get(args.bookId);
 		if (!book) return;
 
-		const user = await ctx.db.get(book.userId);
-		if (!user || user.clerkId !== args.userId) {
+		const user = await ctx.db
+			.query('users')
+			.withIndex('by_clerk_id', (q) => q.eq('clerkId', args.userId))
+			.first();
+
+		if (!user || user._id !== book.userId) {
 			throw new Error('Unauthorized');
 		}
 
-		// Delete associated file from storage if exists
+		const [
+			bookContentRows,
+			documentTextRows,
+			readingPositionRows,
+			bookmarkRows,
+			annotationRows,
+			readingSessionRows
+		] = await Promise.all([
+			ctx.db
+				.query('bookContent')
+				.withIndex('by_book', (q) => q.eq('bookId', args.bookId))
+				.collect(),
+			ctx.db
+				.query('documentText')
+				.withIndex('by_book', (q) => q.eq('bookId', args.bookId))
+				.collect(),
+			ctx.db
+				.query('readingPositions')
+				.withIndex('by_book', (q) => q.eq('bookId', args.bookId))
+				.collect(),
+			ctx.db
+				.query('bookmarks')
+				.withIndex('by_book', (q) => q.eq('bookId', args.bookId))
+				.collect(),
+			ctx.db
+				.query('annotations')
+				.withIndex('by_book', (q) => q.eq('bookId', args.bookId))
+				.collect(),
+			ctx.db
+				.query('readingSessions')
+				.withIndex('by_book', (q) => q.eq('bookId', args.bookId))
+				.collect()
+		]);
+
+		// Strictly delete only records owned by this user for user-scoped tables.
+		const readingPositions = readingPositionRows.filter((row) => row.userId === user._id);
+		const bookmarks = bookmarkRows.filter((row) => row.userId === user._id);
+		const annotations = annotationRows.filter((row) => row.userId === user._id);
+		const readingSessions = readingSessionRows.filter((row) => row.userId === user._id);
+
+		for (const row of bookContentRows) {
+			await ctx.db.delete(row._id);
+		}
+		for (const row of documentTextRows) {
+			await ctx.db.delete(row._id);
+		}
+		for (const row of readingPositions) {
+			await ctx.db.delete(row._id);
+		}
+		for (const row of bookmarks) {
+			await ctx.db.delete(row._id);
+		}
+		for (const row of annotations) {
+			await ctx.db.delete(row._id);
+		}
+		for (const row of readingSessions) {
+			await ctx.db.delete(row._id);
+		}
+
+		await ctx.db.delete(args.bookId);
+
+		// Recompute user stats from remaining sessions.
+		const remainingSessions = await ctx.db
+			.query('readingSessions')
+			.withIndex('by_user', (q) => q.eq('userId', user._id))
+			.collect();
+		const completedBooks = await ctx.db
+			.query('books')
+			.withIndex('by_completed', (q) => q.eq('userId', user._id).eq('isCompleted', true))
+			.collect();
+		const existingStats = await ctx.db
+			.query('userStats')
+			.withIndex('by_user', (q) => q.eq('userId', user._id))
+			.first();
+
+		const totals = remainingSessions.reduce(
+			(acc, session) => {
+				const pagesRead = Math.max(0, session.endPage - session.startPage);
+				return {
+					totalPagesRead: acc.totalPagesRead + pagesRead,
+					totalReadingTime: acc.totalReadingTime + session.durationMinutes
+				};
+			},
+			{ totalPagesRead: 0, totalReadingTime: 0 }
+		);
+
+		const statsPatch = {
+			totalBooksRead: completedBooks.length,
+			totalPagesRead: totals.totalPagesRead,
+			totalReadingTime: totals.totalReadingTime,
+			updatedAt: Date.now()
+		};
+
+		if (existingStats) {
+			await ctx.db.patch(existingStats._id, statsPatch);
+		} else {
+			await ctx.db.insert('userStats', {
+				userId: user._id,
+				...statsPatch
+			});
+		}
+
+		// Delete associated file from storage if it exists.
+		// Keep this after DB cleanup so user-visible data is already consistent
+		// even if storage deletion fails transiently.
 		if (book.fileStorageId) {
 			try {
 				await ctx.storage.delete(book.fileStorageId);
 			} catch (error) {
 				console.error('Failed to delete file from storage:', error);
-				// Continue with book deletion even if file deletion fails
 			}
 		}
 
-		// Delete associated book content if exists
-		const bookContent = await ctx.db
-			.query('bookContent')
-			.withIndex('by_book', (q) => q.eq('bookId', args.bookId))
-			.first();
-		if (bookContent) {
-			await ctx.db.delete(bookContent._id);
-		}
-
-		await ctx.db.delete(args.bookId);
+		return {
+			deleted: true,
+			counts: {
+				bookContent: bookContentRows.length,
+				documentText: documentTextRows.length,
+				readingPositions: readingPositions.length,
+				bookmarks: bookmarks.length,
+				annotations: annotations.length,
+				readingSessions: readingSessions.length,
+				fileStorage: book.fileStorageId ? 1 : 0
+			}
+		};
 	}
 });
 
@@ -253,7 +445,7 @@ export const getByStorageId = query({
 	handler: async (ctx, args) => {
 		return await ctx.db
 			.query('books')
-			.filter((q) => q.eq(q.field('fileStorageId'), args.storageId))
+			.withIndex('by_storage_id', (q) => q.eq('fileStorageId', args.storageId))
 			.take(1);
 	}
 });

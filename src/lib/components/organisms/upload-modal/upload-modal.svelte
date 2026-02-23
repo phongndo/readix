@@ -5,21 +5,24 @@
 	import Button from '$lib/components/ui/button/button.svelte';
 	import FormField from '$lib/components/molecules/form-field/form-field.svelte';
 	import FileUploadZone from '$lib/components/molecules/file-upload-zone/file-upload-zone.svelte';
-	import ProgressBar from '$lib/components/atoms/progress-bar/progress-bar.svelte';
 
-	interface UploadFormData {
+	export interface UploadFormData {
 		file?: File;
-		fileStorageId?: string;
 		title: string;
 		author?: string;
 		description?: string;
 		coverUrl?: string;
 	}
 
-	let { open = $bindable(false) }: { open: boolean } = $props();
+	let {
+		open = $bindable(false),
+		onSubmit
+	}: {
+		open: boolean;
+		onSubmit: (formData: UploadFormData) => Promise<void>;
+	} = $props();
 
 	let selectedFile = $state<File | null>(null);
-	let uploadProgress = $state(0);
 	let isUploading = $state(false);
 
 	// Form fields
@@ -39,7 +42,7 @@
 		error = null;
 	}
 
-	function handleSubmit(e: Event) {
+	async function handleSubmit(e: Event) {
 		e.preventDefault();
 
 		if (!selectedFile) {
@@ -59,19 +62,21 @@
 			coverUrl: coverUrl || undefined
 		};
 
-		const event = new CustomEvent('uploadbook', {
-			detail: formData,
-			bubbles: true
-		});
-		document.dispatchEvent(event);
-
-		open = false;
-		resetForm();
+		isUploading = true;
+		error = null;
+		try {
+			await onSubmit(formData);
+			open = false;
+			resetForm();
+		} catch (submitError) {
+			error = submitError instanceof Error ? submitError.message : 'Failed to upload book';
+		} finally {
+			isUploading = false;
+		}
 	}
 
 	function resetForm() {
 		selectedFile = null;
-		uploadProgress = 0;
 		isUploading = false;
 		title = '';
 		author = '';
@@ -169,16 +174,6 @@
 				<!-- Error Message -->
 				{#if error}
 					<p class="text-sm text-red-500">{error}</p>
-				{/if}
-
-				<!-- Upload Progress -->
-				{#if isUploading}
-					<div class="space-y-2">
-						<ProgressBar value={uploadProgress} size="sm" />
-						<p class="text-xs text-muted-foreground text-center">
-							Uploading... {uploadProgress}%
-						</p>
-					</div>
 				{/if}
 
 				<!-- Submit Button -->

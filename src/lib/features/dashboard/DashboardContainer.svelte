@@ -7,10 +7,10 @@
 	import RecentBooks from '$lib/features/dashboard/RecentBooks.svelte';
 	import EmptyState from '$lib/features/dashboard/EmptyState.svelte';
 	import UploadModal from '$lib/components/organisms/upload-modal/upload-modal.svelte';
+	import type { UploadFormData } from '$lib/components/organisms/upload-modal/upload-modal.svelte';
 	import { libraryState } from '$lib/state/libraryState.svelte';
 	import type { Book } from '$lib/domain/book/Book';
 	import { uploadBookWithFile } from '$lib/services/bookService';
-	import * as bookService from '$lib/services/bookService';
 	import { Effect } from 'effect';
 	import { browser } from '$app/environment';
 
@@ -50,94 +50,34 @@
 		showUploadModal = true;
 	}
 
-	async function handleAddBook(event: CustomEvent) {
-		const formData = event.detail;
-		isLoading = true;
-
+	async function handleUploadBook(formData: UploadFormData) {
 		if (!user?.id) {
-			isLoading = false;
-			return;
+			throw new Error('Not authenticated');
 		}
 
-		const effect = bookService.createBook(user.id, {
-			title: formData.title,
-			author: formData.author,
-			description: formData.description,
-			totalPages: formData.totalPages || 0,
-			content: formData.content || '',
-			coverUrl: formData.coverUrl
-		});
-
-		await Effect.runPromise(
-			effect.pipe(
-				Effect.tap(() => {
-					console.log('[DashboardContainer] Book added successfully');
-					// No page reload needed - Convex subscription will auto-update
-				}),
-				Effect.catchAll((error) => {
-					console.error('Failed to add book:', error);
-					alert('Failed to add book. Please try again.');
-					return Effect.succeed(undefined);
-				})
-			)
-		);
-
-		isLoading = false;
-		showUploadModal = false;
-	}
-
-	async function handleUploadBook(event: CustomEvent) {
-		const { file, title, author, description, coverUrl } = event.detail;
-		isLoading = true;
-
-		if (!user?.id) {
-			isLoading = false;
-			return;
+		if (!formData.file) {
+			throw new Error('A PDF file is required');
 		}
 
-		const effect = file
-			? uploadBookWithFile(user.id, file, { title, author, description, coverUrl })
-			: bookService.createBook(user.id, {
-					title,
-					author,
-					description,
-					totalPages: 0,
-					content: '',
-					coverUrl
-				});
-
-		await Effect.runPromise(
-			effect.pipe(
-				Effect.tap(() => {
-					console.log('[DashboardContainer] Book uploaded successfully');
-					// No page reload needed - Convex subscription will auto-update
-				}),
-				Effect.catchAll((error) => {
-					console.error('Failed to upload book:', error);
-					alert('Failed to upload book. Please try again.');
-					return Effect.succeed(undefined);
+		isLoading = true;
+		try {
+			const createdBook = await Effect.runPromise(
+				uploadBookWithFile(user.id, formData.file, {
+					title: formData.title,
+					author: formData.author,
+					description: formData.description,
+					coverUrl: formData.coverUrl
 				})
-			)
-		);
-
-		isLoading = false;
-		showUploadModal = false;
+			);
+			libraryState.addBook(createdBook);
+			showUploadModal = false;
+		} catch (error) {
+			console.error('Failed to upload book:', error);
+			throw new Error(error instanceof Error ? error.message : 'Failed to upload book');
+		} finally {
+			isLoading = false;
+		}
 	}
-
-	$effect(() => {
-		if (!browser) return;
-
-		const addHandler = (e: Event) => handleAddBook(e as CustomEvent);
-		const uploadHandler = (e: Event) => handleUploadBook(e as CustomEvent);
-
-		document.addEventListener('addbook', addHandler);
-		document.addEventListener('uploadbook', uploadHandler);
-
-		return () => {
-			document.removeEventListener('addbook', addHandler);
-			document.removeEventListener('uploadbook', uploadHandler);
-		};
-	});
 </script>
 
 <div class="min-h-screen bg-background">
@@ -185,4 +125,4 @@
 	</main>
 </div>
 
-<UploadModal bind:open={showUploadModal} />
+<UploadModal bind:open={showUploadModal} onSubmit={handleUploadBook} />

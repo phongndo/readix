@@ -5,6 +5,23 @@ import { calculateProgressPercentage } from '$lib/domain/book/bookRules';
 import { convexClient } from '$lib/convex/client';
 import { api, type Id } from '$lib/convex/api';
 
+export type DeletePreview = {
+	bookId: string;
+	title: string;
+	fileName: string | null;
+	hasStoredFile: boolean;
+	counts: {
+		bookContent: number;
+		documentText: number;
+		readingPositions: number;
+		bookmarks: number;
+		annotations: number;
+		readingSessions: number;
+		fileStorage: number;
+	};
+	totalRecords: number;
+};
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function convexBookToDomain(doc: any): Book {
 	return {
@@ -109,6 +126,33 @@ export function deleteBook(bookId: string, userId: string): Effect.Effect<void, 
 		try: () => convexClient.mutation(api.books.remove, { bookId: bookId as Id<'books'>, userId }),
 		catch: (error) => new DatabaseError('Failed to delete book', error)
 	}).pipe(Effect.map(() => undefined));
+}
+
+export function fetchDeletePreview(
+	bookId: string,
+	userId: string
+): Effect.Effect<DeletePreview, AppError> {
+	return Effect.tryPromise({
+		try: () =>
+			convexClient.query(api.books.getDeletePreview, {
+				bookId: bookId as Id<'books'>,
+				userId
+			}),
+		catch: (error) => new DatabaseError('Failed to fetch delete preview', error)
+	}).pipe(
+		Effect.flatMap((result) =>
+			result
+				? Effect.succeed({
+						bookId: result.bookId,
+						title: result.title,
+						fileName: result.fileName,
+						hasStoredFile: result.hasStoredFile,
+						counts: result.counts,
+						totalRecords: result.totalRecords
+					})
+				: Effect.fail(new NotFoundError('Book not found', 'Book', bookId))
+		)
+	);
 }
 
 export function getBookProgress(book: Book): number {
