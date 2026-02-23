@@ -17,7 +17,7 @@ export const load: LayoutServerLoad = ({ locals, url }) => {
 
 	// If not authenticated and not on a public route, redirect to Clerk portal
 	if (!userId && !isPublicRoute) {
-		const appUrl = `${url.protocol}//${url.host}/`;
+		const appUrl = `${url.protocol}//${url.host}${url.pathname}${url.search}`;
 		throw redirect(307, getClerkPortalUrl(appUrl));
 	}
 

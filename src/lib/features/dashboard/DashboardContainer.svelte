@@ -73,7 +73,9 @@
 			showUploadModal = false;
 		} catch (error) {
 			console.error('Failed to upload book:', error);
-			throw new Error(error instanceof Error ? error.message : 'Failed to upload book');
+			throw new Error(error instanceof Error ? error.message : 'Failed to upload book', {
+				cause: error
+			});
 		} finally {
 			isLoading = false;
 		}

@@ -42,7 +42,7 @@ export async function addBook(userId: string, formData: AddBookFormData): Promis
 	} catch (error) {
 		const errorMessage = error instanceof Error ? error.message : 'Failed to add book';
 		libraryState.setError(errorMessage);
-		throw new Error(errorMessage);
+		throw new Error(errorMessage, { cause: error });
 	}
 }
 
@@ -57,6 +57,6 @@ export async function removeBook(bookId: string, userId: string): Promise<void> 
 	} catch (error) {
 		const errorMessage = error instanceof Error ? error.message : 'Failed to delete book';
 		libraryState.setError(errorMessage);
-		throw new Error(errorMessage);
+		throw new Error(errorMessage, { cause: error });
 	}
 }

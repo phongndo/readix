@@ -1,5 +1,4 @@
 <script lang="ts">
-	import { SignedIn } from 'svelte-clerk';
 	import LibraryView from '$lib/features/library/LibraryView.svelte';
 	import { libraryState } from '$lib/state/libraryState.svelte';
 	import {
@@ -57,7 +56,7 @@
 			const message = error instanceof Error ? error.message : 'Failed to upload book';
 			requestError = message;
 			libraryState.setError(message);
-			throw new Error(message);
+			throw new Error(message, { cause: error });
 		} finally {
 			isMutating = false;
 		}
@@ -78,7 +77,7 @@
 			const message = error instanceof Error ? error.message : 'Failed to delete book';
 			requestError = message;
 			libraryState.setError(message);
-			throw new Error(message);
+			throw new Error(message, { cause: error });
 		} finally {
 			isMutating = false;
 		}
@@ -95,20 +94,18 @@
 		} catch (error) {
 			const message = error instanceof Error ? error.message : 'Failed to load delete preview';
 			requestError = message;
-			throw new Error(message);
+			throw new Error(message, { cause: error });
 		}
 	}
 </script>
 
-<SignedIn>
-	<div class="container mx-auto max-w-6xl p-4">
-		<LibraryView
-			books={libraryState.state.books}
-			isLoading={libraryState.state.isLoading || isMutating}
-			error={requestError || libraryState.state.error}
-			onUploadBook={handleUploadBook}
-			onDeleteBook={handleDeleteBook}
-			onGetDeletePreview={handleGetDeletePreview}
-		/>
-	</div>
-</SignedIn>
+<div class="container mx-auto max-w-6xl p-4">
+	<LibraryView
+		books={libraryState.state.books}
+		isLoading={libraryState.state.isLoading || isMutating}
+		error={requestError || libraryState.state.error}
+		onUploadBook={handleUploadBook}
+		onDeleteBook={handleDeleteBook}
+		onGetDeletePreview={handleGetDeletePreview}
+	/>
+</div>
