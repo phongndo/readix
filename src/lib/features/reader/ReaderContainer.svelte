@@ -1,5 +1,4 @@
 <script lang="ts">
-	import { SignedIn } from 'svelte-clerk';
 	import ReaderView from '$lib/features/reader/ReaderView.svelte';
 	import NewAchievementModal from '$lib/features/progress/NewAchievementModal.svelte';
 	import {
@@ -73,10 +72,8 @@
 	}
 </script>
 
-<SignedIn>
-	{#if data.book}
-		<ReaderView book={data.book} />
-	{/if}
+{#if data.book}
+	<ReaderView book={data.book} />
+{/if}
 
-	<NewAchievementModal bind:open={showAchievementModal} {newAchievements} />
-</SignedIn>
+<NewAchievementModal bind:open={showAchievementModal} {newAchievements} />

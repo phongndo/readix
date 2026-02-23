@@ -43,7 +43,13 @@
 	let initialized = $state(false);
 
 	onMount(async () => {
-		if (!browser || !fileUrl || !container) return;
+		if (!browser || !fileUrl) return;
+		if (!container) {
+			error = 'Reader container not ready';
+			isLoading = false;
+			readerStore.setIsLoading(false);
+			return;
+		}
 
 		try {
 			readerStore.setIsLoading(true);
@@ -328,37 +334,37 @@
 	});
 </script>
 
-{#if isLoading}
-	<div class="flex h-screen items-center justify-center">
-		<div class="text-center">
-			<div
-				class="mb-4 h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent"
-			></div>
-			<p class="text-sm text-muted-foreground">Loading PDF...</p>
-		</div>
-	</div>
-{:else if error}
-	<div class="flex h-screen items-center justify-center">
-		<div class="text-center">
-			<p class="text-red-500">{error}</p>
-		</div>
-	</div>
-{:else}
-	<div
-		bind:this={container}
-		onscroll={handleScroll}
-		class="relative h-screen overflow-y-auto bg-background"
-	>
-		<div class="pages-container relative mx-auto max-w-5xl py-8"></div>
+<div
+	bind:this={container}
+	onscroll={handleScroll}
+	class="relative h-screen overflow-y-auto bg-background"
+>
+	<div class="pages-container relative mx-auto max-w-5xl py-8"></div>
 
-		{#if showAnnotationToolbar}
-			<AnnotationToolbar
-				{selectedText}
-				onHighlight={handleHighlight}
-				onAddNote={handleAddNote}
-				onCancel={clearSelection}
-				position={toolbarPosition}
-			/>
-		{/if}
-	</div>
-{/if}
+	{#if showAnnotationToolbar && !isLoading && !error}
+		<AnnotationToolbar
+			{selectedText}
+			onHighlight={handleHighlight}
+			onAddNote={handleAddNote}
+			onCancel={clearSelection}
+			position={toolbarPosition}
+		/>
+	{/if}
+
+	{#if isLoading}
+		<div class="absolute inset-0 z-20 flex items-center justify-center bg-background/95">
+			<div class="text-center">
+				<div
+					class="mb-4 h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent"
+				></div>
+				<p class="text-sm text-muted-foreground">Loading PDF...</p>
+			</div>
+		</div>
+	{:else if error}
+		<div class="absolute inset-0 z-20 flex items-center justify-center bg-background/95">
+			<div class="text-center">
+				<p class="text-red-500">{error}</p>
+			</div>
+		</div>
+	{/if}
+</div>
