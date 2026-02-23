@@ -82,11 +82,16 @@ function createReadingState() {
 	function getSessionData() {
 		if (!state.currentBook || !state.startTime) return null;
 
+		const elapsedMinutes = Math.max(
+			state.sessionDuration,
+			Math.max(0, Math.floor((Date.now() - state.startTime.getTime()) / 60000))
+		);
+
 		return {
 			bookId: state.currentBook.id,
 			startPage: state.startPage,
 			endPage: state.currentPage,
-			durationMinutes: state.sessionDuration
+			durationMinutes: elapsedMinutes
 		};
 	}
 

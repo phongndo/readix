@@ -1,16 +1,19 @@
 import type { Book } from './Book';
 
 export function calculateProgressPercentage(book: Book): number {
-	if (book.totalPages === 0) return 0;
-	return Math.round((book.currentPage / book.totalPages) * 100);
+	const totalPages = Math.max(1, book.totalPages);
+	const currentPage = Math.max(0, Math.min(book.currentPage, totalPages));
+	return Math.round((currentPage / totalPages) * 100);
 }
 
 export function isBookCompleted(book: Book): boolean {
-	return book.currentPage >= book.totalPages;
+	const totalPages = Math.max(1, book.totalPages);
+	return book.currentPage >= totalPages;
 }
 
 export function canUpdateProgress(book: Book, newPage: number): boolean {
-	return newPage >= 0 && newPage <= book.totalPages;
+	const totalPages = Math.max(1, book.totalPages);
+	return newPage >= 0 && newPage <= totalPages;
 }
 
 export function pagesReadToday(sessions: Array<{ createdAt: Date; pagesRead: number }>): number {

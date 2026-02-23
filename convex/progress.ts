@@ -42,8 +42,16 @@ export const recordSession = mutation({
 		durationMinutes: v.number()
 	},
 	handler: async (ctx, args) => {
-		const pagesRead = args.endPage - args.startPage;
-		if (pagesRead <= 0) return;
+		const pagesRead = Math.max(0, args.endPage - args.startPage);
+		const durationMinutes = Math.max(0, Math.floor(args.durationMinutes));
+		if (pagesRead === 0 && durationMinutes === 0) {
+			return {
+				recorded: false,
+				pagesRead: 0,
+				durationMinutes: 0,
+				awardedAchievements: []
+			};
+		}
 
 		const user = await ctx.db
 			.query('users')
@@ -52,13 +60,23 @@ export const recordSession = mutation({
 
 		if (!user) throw new Error('User not found');
 
+		const book = await ctx.db.get(args.bookId);
+		if (!book) {
+			throw new Error('Book not found');
+		}
+		if (book.userId !== user._id) {
+			throw new Error('Unauthorized');
+		}
+
+		const now = Date.now();
+
 		await ctx.db.insert('readingSessions', {
 			bookId: args.bookId,
 			userId: user._id,
 			startPage: args.startPage,
 			endPage: args.endPage,
-			durationMinutes: args.durationMinutes,
-			createdAt: Date.now()
+			durationMinutes,
+			createdAt: now
 		});
 
 		const stats = await ctx.db
@@ -69,16 +87,16 @@ export const recordSession = mutation({
 		if (stats) {
 			await ctx.db.patch(stats._id, {
 				totalPagesRead: stats.totalPagesRead + pagesRead,
-				totalReadingTime: stats.totalReadingTime + args.durationMinutes,
-				updatedAt: Date.now()
+				totalReadingTime: stats.totalReadingTime + durationMinutes,
+				updatedAt: now
 			});
 		} else {
 			await ctx.db.insert('userStats', {
 				userId: user._id,
 				totalBooksRead: 0,
 				totalPagesRead: pagesRead,
-				totalReadingTime: args.durationMinutes,
-				updatedAt: Date.now()
+				totalReadingTime: durationMinutes,
+				updatedAt: now
 			});
 		}
 
@@ -87,7 +105,6 @@ export const recordSession = mutation({
 			.withIndex('by_user', (q) => q.eq('userId', user._id))
 			.first();
 
-		const now = Date.now();
 		if (streak) {
 			const update = calculateStreakUpdate(
 				streak.currentStreak,
@@ -109,7 +126,14 @@ export const recordSession = mutation({
 			});
 		}
 
-		await checkAndAwardAchievementsInternal(ctx, user._id);
+		const awardedAchievements = await checkAndAwardAchievementsInternal(ctx, user._id);
+
+		return {
+			recorded: true,
+			pagesRead,
+			durationMinutes,
+			awardedAchievements
+		};
 	}
 });
 
@@ -138,7 +162,7 @@ async function checkAndAwardAchievementsInternal(ctx: any, userId: any) {
 	const unlockedNames = new Set(existingAchievements.map((a: any) => a.name));
 
 	const pagesToday = todaySessions.reduce(
-		(sum: number, s: any) => sum + (s.endPage - s.startPage),
+		(sum: number, s: any) => sum + Math.max(0, s.endPage - s.startPage),
 		0
 	);
 	const minutesToday = todaySessions.reduce((sum: number, s: any) => sum + s.durationMinutes, 0);
@@ -301,7 +325,7 @@ export const getActivityByDateRange = query({
 		for (const session of sessions) {
 			const date = new Date(session.createdAt);
 			const dateKey = new Date(date.getFullYear(), date.getMonth(), date.getDate()).getTime();
-			const pages = session.endPage - session.startPage;
+			const pages = Math.max(0, session.endPage - session.startPage);
 
 			if (activityByDate.has(dateKey)) {
 				activityByDate.set(dateKey, activityByDate.get(dateKey) + pages);

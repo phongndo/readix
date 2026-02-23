@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { createAnnotation } from '../../../convex/annotations';
 import { createBookmark, deleteBookmark } from '../../../convex/bookmarks';
+import { recordSession } from '../../../convex/progress';
 import { savePosition } from '../../../convex/readingPositions';
 
 const createBookmarkHandler =
@@ -18,6 +19,10 @@ const createAnnotationHandler =
 const savePositionHandler =
 	/** @type {{ _handler: (ctx: unknown, args: unknown) => Promise<unknown> }} */ (
 		/** @type {unknown} */ (savePosition)
+	)._handler;
+const recordSessionHandler =
+	/** @type {{ _handler: (ctx: unknown, args: unknown) => Promise<unknown> }} */ (
+		/** @type {unknown} */ (recordSession)
 	)._handler;
 
 describe('Reader Convex security guards', () => {
@@ -144,5 +149,62 @@ describe('Reader Convex security guards', () => {
 		await expect(savePositionHandler(ctx, args)).rejects.toThrow('Unauthorized');
 		expect(query).not.toHaveBeenCalled();
 		expect(insert).not.toHaveBeenCalled();
+	});
+
+	it('rejects reading session recording when user does not own the book', async () => {
+		const ownerId = 'user-owner';
+		const attackerId = 'user-attacker';
+		const ownedBookId = 'book-1';
+		const dbInsert = vi.fn();
+
+		const ctx = {
+			db: {
+				query: vi.fn((tableName) => {
+					if (tableName === 'users') {
+						return {
+							withIndex: vi.fn(() => ({
+								first: vi.fn(async () => ({ _id: attackerId, clerkId: 'clerk-attacker' }))
+							}))
+						};
+					}
+
+					if (tableName === 'userStats') {
+						return {
+							withIndex: vi.fn(() => ({
+								first: vi.fn(async () => null)
+							}))
+						};
+					}
+
+					if (tableName === 'streaks') {
+						return {
+							withIndex: vi.fn(() => ({
+								first: vi.fn(async () => null)
+							}))
+						};
+					}
+
+					return {
+						withIndex: vi.fn(() => ({
+							first: vi.fn(async () => null),
+							collect: vi.fn(async () => [])
+						}))
+					};
+				}),
+				get: vi.fn(async () => ({ _id: ownedBookId, userId: ownerId })),
+				insert: dbInsert
+			}
+		};
+
+		const args = {
+			userId: 'clerk-attacker',
+			bookId: ownedBookId,
+			startPage: 1,
+			endPage: 5,
+			durationMinutes: 10
+		};
+
+		await expect(recordSessionHandler(ctx, args)).rejects.toThrow('Unauthorized');
+		expect(dbInsert).not.toHaveBeenCalled();
 	});
 });

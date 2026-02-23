@@ -1,6 +1,8 @@
 <script lang="ts">
+	import { onDestroy } from 'svelte';
 	import ReaderView from '$lib/features/reader/ReaderView.svelte';
 	import NewAchievementModal from '$lib/features/progress/NewAchievementModal.svelte';
+	import { readerStore } from '$lib/features/reader/reader.store.svelte';
 	import {
 		startReading,
 		updatePage,
@@ -22,53 +24,87 @@
 
 	let newAchievements = $state<string[]>([]);
 	let showAchievementModal = $state(false);
+	let hasPersistedProgress = $state(false);
+	let persistPromise: Promise<string[]> | null = null;
 
 	$effect(() => {
 		if (browser && data.book) {
 			startReading(data.book);
+			hasPersistedProgress = false;
+			persistPromise = null;
 		}
+	});
+
+	$effect(() => {
+		if (!browser || !data.book) return;
+		updatePage(readerStore.currentPage);
 	});
 
 	$effect(() => {
 		if (!browser) return;
 
-		document.addEventListener('pagechange', handlePageChange as EventListener);
 		document.addEventListener('exitreader', handleExit as EventListener);
 		window.addEventListener('beforeunload', handleBeforeUnload);
 
 		return () => {
-			document.removeEventListener('pagechange', handlePageChange as EventListener);
 			document.removeEventListener('exitreader', handleExit as EventListener);
 			window.removeEventListener('beforeunload', handleBeforeUnload);
 		};
 	});
 
-	function handlePageChange(e: CustomEvent) {
-		updatePage(e.detail.page);
+	onDestroy(() => {
+		stopReading();
+		persistProgress(false).catch(console.error);
+	});
+
+	async function persistProgress(showAchievements = false): Promise<string[]> {
+		if (!browser || hasPersistedProgress) {
+			return [];
+		}
+
+		if (persistPromise) {
+			return persistPromise;
+		}
+
+		const userId = page.data.userId;
+		if (!userId) {
+			return [];
+		}
+
+		persistPromise = saveProgress(userId)
+			.then((achievements) => {
+				hasPersistedProgress = true;
+
+				if (showAchievements && achievements.length > 0) {
+					newAchievements = achievements;
+					showAchievementModal = true;
+				}
+
+				return achievements;
+			})
+			.catch((error) => {
+				persistPromise = null;
+				throw error;
+			});
+
+		return persistPromise;
 	}
 
 	async function handleExit() {
-		const userId = page.data.userId;
-		if (userId && browser) {
-			try {
-				newAchievements = await saveProgress(userId);
-				if (newAchievements.length > 0) {
-					showAchievementModal = true;
-				}
-			} catch (error) {
-				console.error('Failed to save progress:', error);
-			}
+		try {
+			await persistProgress(true);
+		} catch (error) {
+			console.error('Failed to save progress:', error);
 		}
+
 		stopReading();
 		// eslint-disable-next-line svelte/no-navigation-without-resolve
 		goto('/library');
 	}
 
 	function handleBeforeUnload() {
-		const userId = page.data.userId;
-		if (userId && browser) {
-			saveProgress(userId).catch(console.error);
-		}
+		stopReading();
+		persistProgress(false).catch(console.error);
 	}
 </script>
 

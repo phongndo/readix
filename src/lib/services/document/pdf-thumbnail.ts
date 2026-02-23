@@ -5,10 +5,16 @@ function isPdfFile(file: File): boolean {
 	return file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
 }
 
+export interface PdfUploadMetadata {
+	thumbnailDataUrl?: string;
+	totalPages?: number;
+}
+
 /**
- * Generate a JPEG data URL thumbnail from the first page of a PDF file.
+ * Extract client-side PDF metadata used during upload.
+ * Uses the first page as a thumbnail and reads true PDF page count.
  */
-export async function generateFirstPageThumbnail(file: File): Promise<string | undefined> {
+export async function extractPdfUploadMetadata(file: File): Promise<PdfUploadMetadata | undefined> {
 	if (typeof window === 'undefined' || typeof document === 'undefined') {
 		return undefined;
 	}
@@ -25,6 +31,7 @@ export async function generateFirstPageThumbnail(file: File): Promise<string | u
 	const pdfDocument = await loadingTask.promise;
 
 	try {
+		const totalPages = pdfDocument.numPages || 1;
 		const page = await pdfDocument.getPage(1);
 		try {
 			const baseViewport = page.getViewport({ scale: 1 });
@@ -37,16 +44,27 @@ export async function generateFirstPageThumbnail(file: File): Promise<string | u
 
 			const context = canvas.getContext('2d', { alpha: false });
 			if (!context) {
-				return undefined;
+				return { totalPages };
 			}
 
 			await page.render({ canvasContext: context, viewport, canvas }).promise;
 
-			return canvas.toDataURL('image/jpeg', THUMBNAIL_QUALITY);
+			return {
+				totalPages,
+				thumbnailDataUrl: canvas.toDataURL('image/jpeg', THUMBNAIL_QUALITY)
+			};
 		} finally {
 			page.cleanup();
 		}
 	} finally {
 		await pdfDocument.destroy();
 	}
+}
+
+/**
+ * Generate only first-page thumbnail.
+ */
+export async function generateFirstPageThumbnail(file: File): Promise<string | undefined> {
+	const metadata = await extractPdfUploadMetadata(file);
+	return metadata?.thumbnailDataUrl;
 }

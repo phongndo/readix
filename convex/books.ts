@@ -12,11 +12,42 @@ export const getByUser = query({
 
 		if (!user) return [];
 
-		return await ctx.db
+		const books = await ctx.db
 			.query('books')
 			.withIndex('by_user_updated', (q) => q.eq('userId', user._id))
 			.order('desc')
 			.take(100);
+
+		const readingPositions = await ctx.db
+			.query('readingPositions')
+			.withIndex('by_user', (q) => q.eq('userId', user._id))
+			.collect();
+
+		const positionsByBookId = new Map(
+			readingPositions.map((position) => [position.bookId, position])
+		);
+
+		return books.map((book) => {
+			const position = positionsByBookId.get(book._id);
+			if (!position) {
+				return book;
+			}
+
+			const normalizedTotalPages = Math.max(1, book.totalPages);
+			const positionPage = Math.max(0, Math.min(position.page, normalizedTotalPages));
+			const currentPage = Math.max(book.currentPage, positionPage);
+			const isCompleted = currentPage >= normalizedTotalPages;
+
+			if (currentPage === book.currentPage && isCompleted === book.isCompleted) {
+				return book;
+			}
+
+			return {
+				...book,
+				currentPage,
+				isCompleted
+			};
+		});
 	}
 });
 
@@ -31,7 +62,29 @@ export const getById = query({
 			return null;
 		}
 
-		return book;
+		const readingPosition = await ctx.db
+			.query('readingPositions')
+			.withIndex('by_book_user', (q) => q.eq('bookId', args.bookId).eq('userId', user._id))
+			.first();
+
+		if (!readingPosition) {
+			return book;
+		}
+
+		const normalizedTotalPages = Math.max(1, book.totalPages);
+		const positionPage = Math.max(0, Math.min(readingPosition.page, normalizedTotalPages));
+		const currentPage = Math.max(book.currentPage, positionPage);
+		const isCompleted = currentPage >= normalizedTotalPages;
+
+		if (currentPage === book.currentPage && isCompleted === book.isCompleted) {
+			return book;
+		}
+
+		return {
+			...book,
+			currentPage,
+			isCompleted
+		};
 	}
 });
 
@@ -110,6 +163,51 @@ export const updateProgress = mutation({
 		});
 
 		return { ...book, currentPage: args.newPage, isCompleted };
+	}
+});
+
+export const syncTotalPages = mutation({
+	args: {
+		bookId: v.id('books'),
+		userId: v.string(),
+		totalPages: v.number()
+	},
+	handler: async (ctx, args) => {
+		const book = await ctx.db.get(args.bookId);
+		if (!book) {
+			throw new Error('Book not found');
+		}
+
+		const user = await ctx.db.get(book.userId);
+		if (!user || user.clerkId !== args.userId) {
+			throw new Error('Unauthorized');
+		}
+
+		const normalizedTotalPages = Math.max(1, Math.floor(args.totalPages));
+		const currentPage = Math.max(0, Math.min(book.currentPage, normalizedTotalPages));
+		const isCompleted = currentPage >= normalizedTotalPages;
+
+		if (
+			book.totalPages === normalizedTotalPages &&
+			book.currentPage === currentPage &&
+			book.isCompleted === isCompleted
+		) {
+			return book;
+		}
+
+		await ctx.db.patch(args.bookId, {
+			totalPages: normalizedTotalPages,
+			currentPage,
+			isCompleted,
+			updatedAt: Date.now()
+		});
+
+		return {
+			...book,
+			totalPages: normalizedTotalPages,
+			currentPage,
+			isCompleted
+		};
 	}
 });
 
@@ -362,7 +460,8 @@ export const createWithFile = mutation({
 		fileStorageId: v.id('_storage'),
 		fileName: v.string(),
 		fileType: v.string(),
-		fileSize: v.number()
+		fileSize: v.number(),
+		totalPages: v.optional(v.number())
 	},
 	handler: async (ctx, args) => {
 		const user = await ctx.db
@@ -389,7 +488,7 @@ export const createWithFile = mutation({
 			author: args.author || 'Unknown Author',
 			description: args.description,
 			coverUrl: args.coverUrl,
-			totalPages: 0, // Will be updated after text extraction
+			totalPages: Math.max(1, args.totalPages ?? 1),
 			currentPage: 0,
 			content: '', // Will be populated after text extraction
 			fileStorageId: args.fileStorageId,

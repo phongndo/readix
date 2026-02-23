@@ -14,7 +14,7 @@ export function recordReadingSession(
 	startPage: number,
 	endPage: number,
 	durationMinutes: number
-): Effect.Effect<void, AppError> {
+): Effect.Effect<string[], AppError> {
 	return Effect.tryPromise({
 		try: () =>
 			convexClient.mutation(api.progress.recordSession, {
@@ -25,12 +25,18 @@ export function recordReadingSession(
 				durationMinutes
 			}),
 		catch: (error) => new DatabaseError('Failed to record reading session', error)
-	}).pipe(Effect.map(() => undefined));
-}
-
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-export function checkAndAwardAchievements(_userId: string): Effect.Effect<string[], AppError> {
-	return Effect.succeed([]);
+	}).pipe(
+		Effect.map(
+			(
+				result:
+					| {
+							awardedAchievements?: string[];
+					  }
+					| null
+					| undefined
+			) => result?.awardedAchievements ?? []
+		)
+	);
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any

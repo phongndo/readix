@@ -12,6 +12,14 @@
 		return calculateProgressPercentage(book);
 	}
 
+	function getTotalPages(book: Book): number {
+		return Math.max(1, book.totalPages);
+	}
+
+	function getCurrentPage(book: Book): number {
+		return Math.max(0, Math.min(book.currentPage, getTotalPages(book)));
+	}
+
 	function goToLibrary() {
 		goto(resolve('/library'));
 	}
@@ -66,7 +74,7 @@
 								></div>
 							</div>
 							<p class="mt-1 text-xs text-muted-foreground">
-								{book.currentPage} / {book.totalPages} pages
+								{getCurrentPage(book)} / {getTotalPages(book)} pages
 							</p>
 						</div>
 					</div>

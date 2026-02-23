@@ -34,14 +34,17 @@ export const extractTextFromFile = action({
 
 			const blob = await response.blob();
 			let extractedText = '';
+			let totalPages: number | undefined;
 
 			// Extract text based on file type
 			if (args.fileType === 'text/plain' || args.fileType === '.txt') {
 				extractedText = await extractFromTxt(blob);
+				totalPages = estimatePageCount(extractedText);
 			} else if (args.fileType === 'application/pdf' || args.fileType === '.pdf') {
 				extractedText = await extractFromPdf(blob);
 			} else if (args.fileType === 'application/epub+zip' || args.fileType === '.epub') {
 				extractedText = await extractFromEpub(blob);
+				totalPages = estimatePageCount(extractedText);
 			} else {
 				throw new Error(`Unsupported file type: ${args.fileType}`);
 			}
@@ -56,13 +59,20 @@ export const extractTextFromFile = action({
 				status: 'completed'
 			});
 
-			// Update book with extracted content and page count
-			const totalPages = estimatePageCount(extractedText);
-			await ctx.runMutation(internal.extraction.updateBookWithExtractedContent, {
+			// Update book with extracted content.
+			// For PDFs, totalPages is set during upload from the actual document metadata.
+			const bookPatch: {
+				bookId: typeof args.bookId;
+				content: string;
+				totalPages?: number;
+			} = {
 				bookId: args.bookId,
-				content: extractedText.substring(0, 100000), // Store first 100k chars in book
-				totalPages
-			});
+				content: extractedText.substring(0, 100000) // Store first 100k chars in book
+			};
+			if (typeof totalPages === 'number') {
+				bookPatch.totalPages = totalPages;
+			}
+			await ctx.runMutation(internal.extraction.updateBookWithExtractedContent, bookPatch);
 		} catch (error) {
 			console.error('Text extraction failed:', error);
 
@@ -209,13 +219,20 @@ export const updateBookWithExtractedContent = internalMutation({
 	args: {
 		bookId: v.id('books'),
 		content: v.string(),
-		totalPages: v.number()
+		totalPages: v.optional(v.number())
 	},
 	handler: async (ctx, args) => {
-		await ctx.db.patch(args.bookId, {
+		const patch: {
+			content: string;
+			updatedAt: number;
+			totalPages?: number;
+		} = {
 			content: args.content,
-			totalPages: args.totalPages,
 			updatedAt: Date.now()
-		});
+		};
+		if (typeof args.totalPages === 'number') {
+			patch.totalPages = Math.max(1, args.totalPages);
+		}
+		await ctx.db.patch(args.bookId, patch);
 	}
 });

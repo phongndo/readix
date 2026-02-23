@@ -11,6 +11,7 @@
 	} from '$lib/domain/reading/scrollPreservation';
 	import { fetchBookmarks, lookupConvexUserId } from '$lib/services/bookmarkService';
 	import { fetchAnnotations, createAnnotation } from '$lib/services/annotationService';
+	import { syncBookTotalPages } from '$lib/services/bookService';
 	import { toastState } from '$lib/state/toastState.svelte';
 	import { createSearchIndex } from '$lib/features/reader/search-logic';
 	import { PdfRenderManager, type RenderTextItem } from '$lib/features/reader/pdf-render-manager';
@@ -67,6 +68,11 @@
 			const handle = await Effect.runPromise(engine.load(fileUrl));
 			readerStore.setTotalPages(handle.totalPages);
 			appliedZoom = readerStore.zoom;
+			try {
+				await Effect.runPromise(syncBookTotalPages(bookId, userId, handle.totalPages));
+			} catch (syncError) {
+				console.error('Failed to sync total pages:', syncError);
+			}
 
 			try {
 				const dimensions = await Effect.runPromise(engine.getPageDimensions(1));

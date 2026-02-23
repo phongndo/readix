@@ -4,7 +4,7 @@ import { DatabaseError, NotFoundError, ValidationError, type AppError } from '$l
 import { calculateProgressPercentage } from '$lib/domain/book/bookRules';
 import { convexClient } from '$lib/convex/client';
 import { api, type Id } from '$lib/convex/api';
-import { generateFirstPageThumbnail } from '$lib/services/document/pdf-thumbnail';
+import { extractPdfUploadMetadata } from '$lib/services/document/pdf-thumbnail';
 
 export type DeletePreview = {
 	bookId: string;
@@ -122,6 +122,22 @@ export function updateBookProgress(
 	});
 }
 
+export function syncBookTotalPages(
+	bookId: string,
+	userId: string,
+	totalPages: number
+): Effect.Effect<Book, AppError> {
+	return Effect.tryPromise({
+		try: () =>
+			convexClient.mutation(api.books.syncTotalPages, {
+				bookId: bookId as Id<'books'>,
+				userId,
+				totalPages
+			}),
+		catch: (error) => new DatabaseError('Failed to sync book page count', error)
+	}).pipe(Effect.map(convexBookToDomain));
+}
+
 export function deleteBook(bookId: string, userId: string): Effect.Effect<void, AppError> {
 	return Effect.tryPromise({
 		try: () => convexClient.mutation(api.books.remove, { bookId: bookId as Id<'books'>, userId }),
@@ -179,10 +195,12 @@ export function uploadBookWithFile(
 	}
 ): Effect.Effect<Book, AppError> {
 	return Effect.gen(function* () {
-		const generatedCoverUrl = yield* Effect.tryPromise({
-			try: () => generateFirstPageThumbnail(file),
+		const detectedPdfMetadata = yield* Effect.tryPromise({
+			try: () => extractPdfUploadMetadata(file),
 			catch: (error) => new DatabaseError('Failed to generate thumbnail', error)
 		}).pipe(Effect.orElseSucceed(() => undefined));
+		const generatedCoverUrl = detectedPdfMetadata?.thumbnailDataUrl;
+		const detectedTotalPages = detectedPdfMetadata?.totalPages;
 
 		// Step 1: Get upload URL
 		const uploadUrl = yield* Effect.tryPromise({
@@ -207,23 +225,50 @@ export function uploadBookWithFile(
 			catch: (error) => new DatabaseError('Failed to upload file', error)
 		});
 
-		// Step 3: Create book record with file metadata
+		// Step 3: Create book record with file metadata.
+		// Prefer passing detected totalPages (accurate card display immediately).
+		// Fall back for stale Convex deployments that may reject the extra arg.
+		const createBookPayload = {
+			userId,
+			title: metadata.title,
+			author: metadata.author,
+			description: metadata.description,
+			coverUrl: generatedCoverUrl ?? metadata.coverUrl,
+			documentType: metadata.documentType,
+			fileStorageId: uploadResponse,
+			fileName: file.name,
+			fileType: file.type || 'application/octet-stream',
+			fileSize: file.size
+		};
 		const bookId = yield* Effect.tryPromise({
-			try: () =>
-				convexClient.mutation(api.books.createWithFile, {
-					userId,
-					title: metadata.title,
-					author: metadata.author,
-					description: metadata.description,
-					coverUrl: generatedCoverUrl ?? metadata.coverUrl,
-					documentType: metadata.documentType,
-					fileStorageId: uploadResponse,
-					fileName: file.name,
-					fileType: file.type || 'application/octet-stream',
-					fileSize: file.size
-				}),
+			try: async () => {
+				if (typeof detectedTotalPages === 'number') {
+					try {
+						return await convexClient.mutation(api.books.createWithFile, {
+							...createBookPayload,
+							totalPages: detectedTotalPages
+						});
+					} catch {
+						// Fallback for old backend argument validators.
+					}
+				}
+
+				return await convexClient.mutation(api.books.createWithFile, createBookPayload);
+			},
 			catch: (error) => new DatabaseError('Failed to create book record', error)
 		});
+
+		// Best-effort page count sync for PDF uploads.
+		// This remains optional to preserve compatibility with stale Convex deployments.
+		if (typeof detectedTotalPages === 'number') {
+			effectIgnoreError(() =>
+				convexClient.mutation(api.books.syncTotalPages, {
+					bookId,
+					userId,
+					totalPages: detectedTotalPages
+				})
+			);
+		}
 
 		// Step 4: Trigger text extraction (async, don't wait)
 		effectIgnoreError(() =>

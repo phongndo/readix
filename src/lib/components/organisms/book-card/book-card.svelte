@@ -17,8 +17,10 @@
 <script lang="ts">
 	let { book, onClick, onDelete, class: className }: BookCardProps = $props();
 
+	const totalPages = $derived(Math.max(1, book.totalPages));
+	const currentPage = $derived(Math.max(0, Math.min(book.currentPage, totalPages)));
 	const progress = $derived(calculateProgressPercentage(book));
-	const isCompleted = $derived(book.isCompleted);
+	const isCompleted = $derived(book.isCompleted || currentPage >= totalPages);
 </script>
 
 <CardContainer
@@ -55,7 +57,7 @@
 	</div>
 	<div class="space-y-1">
 		<div class="flex justify-between text-xs text-muted-foreground">
-			<span>{book.currentPage} / {book.totalPages} pages</span>
+			<span>{currentPage} / {totalPages} pages</span>
 			<span>{progress}%</span>
 		</div>
 		<ProgressBar value={progress} size="sm" />

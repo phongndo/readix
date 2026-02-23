@@ -3,7 +3,7 @@ import { browser } from '$app/environment';
 import { readingState } from '$lib/state/readingState.svelte';
 import { libraryState } from '$lib/state/libraryState.svelte';
 import { updateBookProgress } from '$lib/services/bookService';
-import { recordReadingSession, checkAndAwardAchievements } from '$lib/services/progressService';
+import { recordReadingSession } from '$lib/services/progressService';
 import type { Book } from '$lib/domain/book/Book';
 
 export function startReading(book: Book): void {
@@ -46,24 +46,25 @@ export async function saveProgress(userId: string): Promise<string[]> {
 	if (!sessionData) return [];
 
 	const { bookId, startPage, endPage, durationMinutes } = sessionData;
+	const pagesRead = Math.max(0, endPage - startPage);
+	const trackedDurationMinutes = Math.max(durationMinutes, pagesRead > 0 ? 1 : 0);
 
 	try {
 		// Execute Effects using runPromise (browser-safe)
 		await Effect.runPromise(updateBookProgress(bookId as unknown as string, userId, endPage));
 
-		if (endPage > startPage) {
-			await Effect.runPromise(
+		let newAchievements: string[] = [];
+		if (pagesRead > 0 || trackedDurationMinutes > 0) {
+			newAchievements = await Effect.runPromise(
 				recordReadingSession(
 					userId,
 					bookId as unknown as string,
 					startPage,
 					endPage,
-					durationMinutes
+					trackedDurationMinutes
 				)
 			);
 		}
-
-		const newAchievements = await Effect.runPromise(checkAndAwardAchievements(userId));
 
 		libraryState.updateBook(bookId as unknown as string, { currentPage: endPage });
 
