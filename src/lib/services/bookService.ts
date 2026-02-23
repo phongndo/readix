@@ -4,6 +4,7 @@ import { DatabaseError, NotFoundError, ValidationError, type AppError } from '$l
 import { calculateProgressPercentage } from '$lib/domain/book/bookRules';
 import { convexClient } from '$lib/convex/client';
 import { api, type Id } from '$lib/convex/api';
+import { generateFirstPageThumbnail } from '$lib/services/document/pdf-thumbnail';
 
 export type DeletePreview = {
 	bookId: string;
@@ -178,6 +179,11 @@ export function uploadBookWithFile(
 	}
 ): Effect.Effect<Book, AppError> {
 	return Effect.gen(function* () {
+		const generatedCoverUrl = yield* Effect.tryPromise({
+			try: () => generateFirstPageThumbnail(file),
+			catch: (error) => new DatabaseError('Failed to generate thumbnail', error)
+		}).pipe(Effect.orElseSucceed(() => undefined));
+
 		// Step 1: Get upload URL
 		const uploadUrl = yield* Effect.tryPromise({
 			try: () => convexClient.mutation(api.files.generateUploadUrl, {}),
@@ -209,7 +215,7 @@ export function uploadBookWithFile(
 					title: metadata.title,
 					author: metadata.author,
 					description: metadata.description,
-					coverUrl: metadata.coverUrl,
+					coverUrl: generatedCoverUrl ?? metadata.coverUrl,
 					documentType: metadata.documentType,
 					fileStorageId: uploadResponse,
 					fileName: file.name,
