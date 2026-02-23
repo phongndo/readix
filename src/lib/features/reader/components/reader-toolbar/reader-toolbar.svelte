@@ -12,6 +12,7 @@
 		onBack: () => void;
 		onToggleSidebar: () => void;
 		onSearchClick: () => void;
+		onAddBookmark: () => void;
 		zoom: number;
 		onZoomChange: (zoom: number) => void;
 		isSidebarOpen?: boolean;
@@ -28,16 +29,12 @@
 		onBack,
 		onToggleSidebar,
 		onSearchClick,
+		onAddBookmark,
 		zoom,
 		onZoomChange,
 		isSidebarOpen = false,
 		class: className
 	}: ReaderToolbarProps = $props();
-
-	function handleAddBookmark() {
-		const event = new CustomEvent('addbookmark');
-		document.dispatchEvent(event);
-	}
 </script>
 
 <header class="flex items-center justify-between border-b bg-background py-3 px-4 {className}">
@@ -81,7 +78,7 @@
 					{...props}
 					variant="ghost"
 					size="icon-sm"
-					onclick={handleAddBookmark}
+					onclick={onAddBookmark}
 					aria-label="Add bookmark"
 					class="hidden sm:flex"
 				>

@@ -57,9 +57,17 @@
 	}
 
 	function handleJumpToPage(pageNum: number) {
+		readerStore.setCurrentPage(pageNum);
 		if (pdfViewerRef) {
 			pdfViewerRef.scrollToPage(pageNum);
 		}
+	}
+
+	function jumpToSearchResult(direction: 'next' | 'previous') {
+		const result =
+			direction === 'next' ? readerStore.nextSearchResult() : readerStore.previousSearchResult();
+		if (!result) return;
+		handleJumpToPage(result.page);
 	}
 
 	async function handleCreateBookmark(color: BookmarkColor) {
@@ -119,7 +127,7 @@
 		}
 
 		try {
-			await Effect.runPromise(deleteBookmark(bookmark.id));
+			await Effect.runPromise(deleteBookmark(bookmark.id, bookmark.userId));
 			readerStore.deleteBookmark(bookmark.id);
 			toastState.showSuccess('Bookmark deleted');
 		} catch (err) {
@@ -144,20 +152,21 @@
 				}
 			},
 			previousPage: () => {
-				readerStore.previousPage();
+				const targetPage = Math.max(1, readerStore.currentPage - 1);
+				handleJumpToPage(targetPage);
 			},
 			nextPage: () => {
-				readerStore.nextPage();
+				const targetPage = Math.min(
+					readerStore.totalPages || book.totalPages,
+					readerStore.currentPage + 1
+				);
+				handleJumpToPage(targetPage);
 			},
 			goToStart: () => {
-				if (containerRef) {
-					containerRef.scrollTo({ top: 0, behavior: 'smooth' });
-				}
+				handleJumpToPage(1);
 			},
 			goToEnd: () => {
-				if (containerRef) {
-					containerRef.scrollTo({ top: containerRef.scrollHeight, behavior: 'smooth' });
-				}
+				handleJumpToPage(readerStore.totalPages || book.totalPages);
 			},
 			addBookmark: () => {
 				showBookmarkDialog = true;
@@ -170,10 +179,10 @@
 				readerStore.toggleSidebar();
 			},
 			nextSearchResult: () => {
-				// TODO: Implement search result navigation
+				jumpToSearchResult('next');
 			},
 			previousSearchResult: () => {
-				// TODO: Implement search result navigation
+				jumpToSearchResult('previous');
 			},
 			zoomIn: () => {
 				readerStore.zoomIn();
@@ -220,6 +229,9 @@
 		onSearchClick={() => {
 			readerStore.setSidebarTab('search');
 			if (!readerStore.isSidebarOpen) readerStore.toggleSidebar();
+		}}
+		onAddBookmark={() => {
+			showBookmarkDialog = true;
 		}}
 		zoom={readerStore.zoom}
 		onZoomChange={(newZoom) => readerStore.setZoom(newZoom)}

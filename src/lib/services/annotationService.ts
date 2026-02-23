@@ -76,11 +76,15 @@ export function createAnnotation(input: AnnotationInput): Effect.Effect<string, 
 /**
  * Delete an annotation by ID
  */
-export function deleteAnnotation(annotationId: string): Effect.Effect<void, DatabaseError> {
+export function deleteAnnotation(
+	annotationId: string,
+	userId: string
+): Effect.Effect<void, DatabaseError> {
 	return Effect.tryPromise({
 		try: () =>
 			convexClient.mutation(api.annotations.deleteAnnotation, {
-				annotationId: annotationId as Id<'annotations'>
+				annotationId: annotationId as Id<'annotations'>,
+				userId: userId as Id<'users'>
 			}),
 		catch: (error) => new DatabaseError('Failed to delete annotation', error)
 	});
@@ -91,12 +95,14 @@ export function deleteAnnotation(annotationId: string): Effect.Effect<void, Data
  */
 export function updateAnnotation(
 	annotationId: string,
+	userId: string,
 	updates: { note?: string; color?: string }
 ): Effect.Effect<void, DatabaseError> {
 	return Effect.tryPromise({
 		try: () =>
 			convexClient.mutation(api.annotations.updateAnnotation, {
 				annotationId: annotationId as Id<'annotations'>,
+				userId: userId as Id<'users'>,
 				updates
 			}),
 		catch: (error) => new DatabaseError('Failed to update annotation', error)

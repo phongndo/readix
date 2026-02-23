@@ -76,7 +76,7 @@ export interface BoundingBox {
 export interface SearchResult {
 	page: number;
 	text: string;
-	highlightedText: string;
+	matchRanges: Array<{ start: number; end: number }>;
 	score: number;
 }
 

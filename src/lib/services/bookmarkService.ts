@@ -64,11 +64,15 @@ export function createBookmark(input: BookmarkInput): Effect.Effect<string, Data
 /**
  * Delete a bookmark by ID
  */
-export function deleteBookmark(bookmarkId: string): Effect.Effect<void, DatabaseError> {
+export function deleteBookmark(
+	bookmarkId: string,
+	userId: string
+): Effect.Effect<void, DatabaseError> {
 	return Effect.tryPromise({
 		try: () =>
 			convexClient.mutation(api.bookmarks.deleteBookmark, {
-				bookmarkId: bookmarkId as Id<'bookmarks'>
+				bookmarkId: bookmarkId as Id<'bookmarks'>,
+				userId: userId as Id<'users'>
 			}),
 		catch: (error) => new DatabaseError('Failed to delete bookmark', error)
 	});
@@ -79,12 +83,14 @@ export function deleteBookmark(bookmarkId: string): Effect.Effect<void, Database
  */
 export function updateBookmark(
 	bookmarkId: string,
+	userId: string,
 	updates: { title?: string; color?: BookmarkColor }
 ): Effect.Effect<void, DatabaseError> {
 	return Effect.tryPromise({
 		try: () =>
 			convexClient.mutation(api.bookmarks.updateBookmark, {
 				bookmarkId: bookmarkId as Id<'bookmarks'>,
+				userId: userId as Id<'users'>,
 				updates
 			}),
 		catch: (error) => new DatabaseError('Failed to update bookmark', error)

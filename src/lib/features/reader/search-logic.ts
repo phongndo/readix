@@ -37,7 +37,7 @@ function extractSnippet(
 	text: string,
 	query: string,
 	matchIndices?: readonly [number, number][]
-): { snippet: string; highlightedText: string } {
+): { snippet: string; matchRanges: Array<{ start: number; end: number }> } {
 	const lowerText = text.toLowerCase();
 	const lowerQuery = query.toLowerCase();
 
@@ -76,28 +76,8 @@ function extractSnippet(
 	if (snippetStart > 0) snippet = '...' + snippet;
 	if (snippetEnd < text.length) snippet = snippet + '...';
 
-	// Create highlighted version
-	const highlightedText = highlightMatches(snippet, query);
-
-	return { snippet, highlightedText };
-}
-
-/**
- * Highlight matching words in text
- */
-function highlightMatches(text: string, query: string): string {
-	const queryWords = query
-		.toLowerCase()
-		.split(/\s+/)
-		.filter((w) => w.length >= 2);
-	let highlighted = text;
-
-	for (const word of queryWords) {
-		const regex = new RegExp(`(${escapeRegex(word)})`, 'gi');
-		highlighted = highlighted.replace(regex, '<mark>$1</mark>');
-	}
-
-	return highlighted;
+	const matchRanges = findMatchRanges(snippet, query);
+	return { snippet, matchRanges };
 }
 
 /**
@@ -105,6 +85,27 @@ function highlightMatches(text: string, query: string): string {
  */
 function escapeRegex(string: string): string {
 	return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+function findMatchRanges(text: string, query: string): Array<{ start: number; end: number }> {
+	const ranges: Array<{ start: number; end: number }> = [];
+	const queryWords = query
+		.trim()
+		.split(/\s+/)
+		.filter((word) => word.length >= 2);
+
+	for (const word of queryWords) {
+		const regex = new RegExp(escapeRegex(word), 'gi');
+		for (const match of text.matchAll(regex)) {
+			if (match.index === undefined) continue;
+			ranges.push({
+				start: match.index,
+				end: match.index + match[0].length
+			});
+		}
+	}
+
+	return ranges.sort((a, b) => a.start - b.start);
 }
 
 /**
@@ -125,12 +126,12 @@ export function searchClientSide(
 		const matches = result.matches?.[0];
 		const indices = matches?.indices;
 
-		const { snippet, highlightedText } = extractSnippet(item.text, query, indices);
+		const { snippet, matchRanges } = extractSnippet(item.text, query, indices);
 
 		return {
 			page: item.page,
 			text: snippet,
-			highlightedText,
+			matchRanges,
 			score: result.score ?? 1
 		};
 	});
@@ -156,12 +157,12 @@ export function searchServerSide(
 
 			return results.map(
 				(doc: { page: number; text: string; wordCount: number }, index: number) => {
-					const { snippet, highlightedText } = extractSnippet(doc.text, query);
+					const { snippet, matchRanges } = extractSnippet(doc.text, query);
 
 					return {
 						page: doc.page,
 						text: snippet,
-						highlightedText,
+						matchRanges,
 						score: index * 0.1 // Lower score = higher relevance
 					};
 				}

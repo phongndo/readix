@@ -10,12 +10,16 @@ export const getBookmarks = query({
 		userId: v.id('users')
 	},
 	handler: async (ctx, args) => {
-		const bookmarks = await ctx.db
+		const book = await ctx.db.get(args.bookId);
+		if (!book) return [];
+		if (book.userId !== args.userId) {
+			throw new Error('Unauthorized');
+		}
+
+		return await ctx.db
 			.query('bookmarks')
 			.withIndex('by_book_user', (q) => q.eq('bookId', args.bookId).eq('userId', args.userId))
 			.collect();
-
-		return bookmarks;
 	}
 });
 
@@ -40,8 +44,15 @@ export const createBookmark = mutation({
 		createdAt: v.number()
 	},
 	handler: async (ctx, args) => {
-		const bookmarkId = await ctx.db.insert('bookmarks', args);
-		return bookmarkId;
+		const book = await ctx.db.get(args.bookId);
+		if (!book) {
+			throw new Error('Book not found');
+		}
+		if (book.userId !== args.userId) {
+			throw new Error('Unauthorized');
+		}
+
+		return await ctx.db.insert('bookmarks', args);
 	}
 });
 
@@ -50,9 +61,21 @@ export const createBookmark = mutation({
  */
 export const deleteBookmark = mutation({
 	args: {
-		bookmarkId: v.id('bookmarks')
+		bookmarkId: v.id('bookmarks'),
+		userId: v.id('users')
 	},
 	handler: async (ctx, args) => {
+		const bookmark = await ctx.db.get(args.bookmarkId);
+		if (!bookmark) return;
+		if (bookmark.userId !== args.userId) {
+			throw new Error('Unauthorized');
+		}
+
+		const book = await ctx.db.get(bookmark.bookId);
+		if (!book || book.userId !== args.userId) {
+			throw new Error('Unauthorized');
+		}
+
 		await ctx.db.delete(args.bookmarkId);
 	}
 });
@@ -63,6 +86,7 @@ export const deleteBookmark = mutation({
 export const updateBookmark = mutation({
 	args: {
 		bookmarkId: v.id('bookmarks'),
+		userId: v.id('users'),
 		updates: v.object({
 			title: v.optional(v.string()),
 			color: v.optional(
@@ -77,6 +101,19 @@ export const updateBookmark = mutation({
 		})
 	},
 	handler: async (ctx, args) => {
+		const bookmark = await ctx.db.get(args.bookmarkId);
+		if (!bookmark) {
+			throw new Error('Bookmark not found');
+		}
+		if (bookmark.userId !== args.userId) {
+			throw new Error('Unauthorized');
+		}
+
+		const book = await ctx.db.get(bookmark.bookId);
+		if (!book || book.userId !== args.userId) {
+			throw new Error('Unauthorized');
+		}
+
 		const updateData: {
 			title?: string;
 			color?: 'yellow' | 'green' | 'blue' | 'pink' | 'purple';

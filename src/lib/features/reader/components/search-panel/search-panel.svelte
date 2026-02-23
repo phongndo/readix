@@ -60,6 +60,12 @@
 	}
 
 	function handleResultClick(result: SearchResult) {
+		const index = readerStore.searchResults.findIndex(
+			(entry) => entry.page === result.page && entry.score === result.score
+		);
+		if (index >= 0) {
+			readerStore.setActiveSearchResultIndex(index);
+		}
 		onJumpToPage(result.page);
 	}
 
@@ -68,7 +74,43 @@
 		return text.substring(0, maxLength) + '...';
 	}
 
+	function toHighlightedSegments(
+		text: string,
+		ranges: Array<{ start: number; end: number }>
+	): Array<{ text: string; highlighted: boolean }> {
+		if (ranges.length === 0) {
+			return [{ text, highlighted: false }];
+		}
+
+		const segments: Array<{ text: string; highlighted: boolean }> = [];
+		let cursor = 0;
+
+		for (const range of ranges) {
+			if (range.start > cursor) {
+				segments.push({
+					text: text.slice(cursor, range.start),
+					highlighted: false
+				});
+			}
+			segments.push({
+				text: text.slice(range.start, range.end),
+				highlighted: true
+			});
+			cursor = range.end;
+		}
+
+		if (cursor < text.length) {
+			segments.push({
+				text: text.slice(cursor),
+				highlighted: false
+			});
+		}
+
+		return segments.filter((segment) => segment.text.length > 0);
+	}
+
 	const displayedResults = $derived(readerStore.searchResults.slice(0, 20));
+	const indexedPages = $derived(readerStore.searchIndexEntries.length);
 </script>
 
 <div class="flex h-full flex-col">
@@ -80,6 +122,11 @@
 			debounceMs={300}
 			class="w-full"
 		/>
+		{#if indexedPages > 0}
+			<p class="mt-2 text-xs text-muted-foreground">
+				Indexed {indexedPages} / {readerStore.totalPages} pages for fast local search
+			</p>
+		{/if}
 	</div>
 
 	<div class="flex-1 overflow-y-auto p-4">
@@ -99,20 +146,27 @@
 			<div class="py-8 text-center text-sm text-muted-foreground">No matches found</div>
 		{:else}
 			<div class="space-y-2">
-				{#each displayedResults as result (result.page + '-' + result.score)}
+				{#each displayedResults as result, index (result.page + '-' + result.score)}
+					{@const snippet = truncateText(result.text)}
+					{@const ranges = result.matchRanges || []}
+					{@const segments = toHighlightedSegments(snippet, ranges)}
 					<button
 						type="button"
 						onclick={() => handleResultClick(result)}
-						class="w-full rounded-md border border-border bg-card p-3 text-left transition-colors hover:bg-accent"
+						class="w-full rounded-md border border-border bg-card p-3 text-left transition-colors hover:bg-accent {readerStore.activeSearchResultIndex ===
+						index
+							? 'border-primary/50 bg-accent'
+							: ''}"
 					>
 						<div class="mb-1 text-xs font-medium text-muted-foreground">Page {result.page}</div>
 						<p class="text-sm leading-relaxed text-foreground">
-							{#if result.highlightedText}
-								<!-- eslint-disable-next-line svelte/no-at-html-tags -->
-								{@html result.highlightedText}
-							{:else}
-								{truncateText(result.text)}
-							{/if}
+							{#each segments as segment, segmentIndex (`${result.page}-${index}-${segmentIndex}`)}
+								{#if segment.highlighted}
+									<mark>{segment.text}</mark>
+								{:else}
+									{segment.text}
+								{/if}
+							{/each}
 						</p>
 					</button>
 				{/each}

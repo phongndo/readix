@@ -10,12 +10,16 @@ export const getAnnotations = query({
 		userId: v.id('users')
 	},
 	handler: async (ctx, args) => {
-		const annotations = await ctx.db
+		const book = await ctx.db.get(args.bookId);
+		if (!book) return [];
+		if (book.userId !== args.userId) {
+			throw new Error('Unauthorized');
+		}
+
+		return await ctx.db
 			.query('annotations')
 			.withIndex('by_book_user', (q) => q.eq('bookId', args.bookId).eq('userId', args.userId))
 			.collect();
-
-		return annotations;
 	}
 });
 
@@ -47,8 +51,15 @@ export const createAnnotation = mutation({
 		updatedAt: v.number()
 	},
 	handler: async (ctx, args) => {
-		const annotationId = await ctx.db.insert('annotations', args);
-		return annotationId;
+		const book = await ctx.db.get(args.bookId);
+		if (!book) {
+			throw new Error('Book not found');
+		}
+		if (book.userId !== args.userId) {
+			throw new Error('Unauthorized');
+		}
+
+		return await ctx.db.insert('annotations', args);
 	}
 });
 
@@ -57,9 +68,21 @@ export const createAnnotation = mutation({
  */
 export const deleteAnnotation = mutation({
 	args: {
-		annotationId: v.id('annotations')
+		annotationId: v.id('annotations'),
+		userId: v.id('users')
 	},
 	handler: async (ctx, args) => {
+		const annotation = await ctx.db.get(args.annotationId);
+		if (!annotation) return;
+		if (annotation.userId !== args.userId) {
+			throw new Error('Unauthorized');
+		}
+
+		const book = await ctx.db.get(annotation.bookId);
+		if (!book || book.userId !== args.userId) {
+			throw new Error('Unauthorized');
+		}
+
 		await ctx.db.delete(args.annotationId);
 	}
 });
@@ -70,12 +93,26 @@ export const deleteAnnotation = mutation({
 export const updateAnnotation = mutation({
 	args: {
 		annotationId: v.id('annotations'),
+		userId: v.id('users'),
 		updates: v.object({
 			note: v.optional(v.string()),
 			color: v.optional(v.string())
 		})
 	},
 	handler: async (ctx, args) => {
+		const annotation = await ctx.db.get(args.annotationId);
+		if (!annotation) {
+			throw new Error('Annotation not found');
+		}
+		if (annotation.userId !== args.userId) {
+			throw new Error('Unauthorized');
+		}
+
+		const book = await ctx.db.get(annotation.bookId);
+		if (!book || book.userId !== args.userId) {
+			throw new Error('Unauthorized');
+		}
+
 		const updateData: { note?: string; color?: string; updatedAt: number } = {
 			updatedAt: Date.now()
 		};

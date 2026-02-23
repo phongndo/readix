@@ -30,10 +30,10 @@
 		onJumpToPage(page);
 	}
 
-	async function handleDeleteAnnotation(annotationId: string) {
+	async function handleDeleteAnnotation(annotation: Annotation) {
 		try {
-			await Effect.runPromise(deleteAnnotation(annotationId));
-			readerStore.removeAnnotation(annotationId);
+			await Effect.runPromise(deleteAnnotation(annotation.id, annotation.userId));
+			readerStore.removeAnnotation(annotation.id);
 			toastState.showSuccess('Annotation deleted');
 		} catch (err) {
 			console.error('Failed to delete annotation:', err);
@@ -65,7 +65,7 @@
 					</button>
 					<button
 						type="button"
-						onclick={() => handleDeleteAnnotation(annotation.id)}
+						onclick={() => handleDeleteAnnotation(annotation)}
 						class="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-white opacity-0 transition-opacity group-hover:opacity-100"
 						aria-label="Delete annotation"
 					>

@@ -39,6 +39,7 @@ function createReaderStore() {
 	// Search
 	let searchQuery = $state('');
 	let searchResults = $state<SearchResult[]>([]);
+	let activeSearchResultIndex = $state(-1);
 	let isSearching = $state(false);
 	let searchIndex = $state<Fuse<SearchIndexEntry> | null>(null);
 	let searchIndexEntries = $state<SearchIndexEntry[]>([]);
@@ -95,6 +96,15 @@ function createReaderStore() {
 		},
 		get searchResults() {
 			return searchResults;
+		},
+		get activeSearchResultIndex() {
+			return activeSearchResultIndex;
+		},
+		get activeSearchResult() {
+			if (activeSearchResultIndex < 0 || activeSearchResultIndex >= searchResults.length) {
+				return null;
+			}
+			return searchResults[activeSearchResultIndex];
 		},
 		get isSearching() {
 			return isSearching;
@@ -160,9 +170,18 @@ function createReaderStore() {
 		},
 		setSearchQuery: (query: string) => {
 			searchQuery = query;
+			activeSearchResultIndex = -1;
 		},
 		setSearchResults: (results: SearchResult[]) => {
 			searchResults = results;
+			activeSearchResultIndex = results.length > 0 ? 0 : -1;
+		},
+		setActiveSearchResultIndex: (index: number) => {
+			if (searchResults.length === 0) {
+				activeSearchResultIndex = -1;
+				return;
+			}
+			activeSearchResultIndex = Math.max(0, Math.min(index, searchResults.length - 1));
 		},
 		setIsSearching: (searching: boolean) => {
 			isSearching = searching;
@@ -175,6 +194,25 @@ function createReaderStore() {
 		},
 		addSearchIndexEntry: (entry: SearchIndexEntry) => {
 			searchIndexEntries = [...searchIndexEntries, entry];
+		},
+		nextSearchResult: () => {
+			if (searchResults.length === 0) return null;
+			if (activeSearchResultIndex < 0) {
+				activeSearchResultIndex = 0;
+			} else {
+				activeSearchResultIndex = (activeSearchResultIndex + 1) % searchResults.length;
+			}
+			return searchResults[activeSearchResultIndex];
+		},
+		previousSearchResult: () => {
+			if (searchResults.length === 0) return null;
+			if (activeSearchResultIndex < 0) {
+				activeSearchResultIndex = 0;
+			} else {
+				activeSearchResultIndex =
+					(activeSearchResultIndex - 1 + searchResults.length) % searchResults.length;
+			}
+			return searchResults[activeSearchResultIndex];
 		},
 
 		// Actions
@@ -232,6 +270,7 @@ function createReaderStore() {
 			annotations = [];
 			searchQuery = '';
 			searchResults = [];
+			activeSearchResultIndex = -1;
 			isSearching = false;
 			searchIndex = null;
 			searchIndexEntries = [];

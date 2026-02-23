@@ -1,7 +1,10 @@
 <script lang="ts">
+	import { Effect } from 'effect';
 	import { Bookmark } from '@lucide/svelte';
 	import BookmarkItem from '$lib/features/reader/components/bookmark-item/bookmark-item.svelte';
 	import { readerStore } from '$lib/features/reader/reader.store.svelte';
+	import { deleteBookmark } from '$lib/services/bookmarkService';
+	import { toastState } from '$lib/state/toastState.svelte';
 	import type { Bookmark as BookmarkType } from '$lib/domain/reading/ReadingPosition';
 
 	export interface BookmarkSidebarProps {
@@ -29,8 +32,15 @@
 		readerStore.setSidebarTab('bookmarks');
 	}
 
-	function handleDeleteBookmark(bookmarkId: string) {
-		readerStore.deleteBookmark(bookmarkId);
+	async function handleDeleteBookmark(bookmark: BookmarkType) {
+		try {
+			await Effect.runPromise(deleteBookmark(bookmark.id, bookmark.userId));
+			readerStore.deleteBookmark(bookmark.id);
+			toastState.showSuccess('Bookmark deleted');
+		} catch (err) {
+			console.error('Failed to delete bookmark:', err);
+			toastState.showError('Failed to delete bookmark');
+		}
 	}
 </script>
 
@@ -47,7 +57,7 @@
 					{bookmark}
 					isActive={bookmark.page === currentPage}
 					onClick={() => handleBookmarkClick(bookmark)}
-					onDelete={() => handleDeleteBookmark(bookmark.id)}
+					onDelete={() => handleDeleteBookmark(bookmark)}
 				/>
 			{/each}
 		</div>

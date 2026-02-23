@@ -10,12 +10,15 @@ export const getPosition = query({
 		userId: v.id('users')
 	},
 	handler: async (ctx, args) => {
-		const position = await ctx.db
+		const book = await ctx.db.get(args.bookId);
+		if (!book || book.userId !== args.userId) {
+			return null;
+		}
+
+		return await ctx.db
 			.query('readingPositions')
 			.withIndex('by_book_user', (q) => q.eq('bookId', args.bookId).eq('userId', args.userId))
 			.first();
-
-		return position;
 	}
 });
 
@@ -35,25 +38,29 @@ export const savePosition = mutation({
 	},
 	handler: async (ctx, args) => {
 		const { bookId, userId } = args.position;
+		const book = await ctx.db.get(bookId);
+		if (!book) {
+			throw new Error('Book not found');
+		}
+		if (book.userId !== userId) {
+			throw new Error('Unauthorized');
+		}
 
-		// Check if position already exists
 		const existing = await ctx.db
 			.query('readingPositions')
 			.withIndex('by_book_user', (q) => q.eq('bookId', bookId).eq('userId', userId))
 			.first();
 
 		if (existing) {
-			// Update existing
 			await ctx.db.patch(existing._id, {
 				page: args.position.page,
 				scrollOffset: args.position.scrollOffset,
 				timestamp: args.position.timestamp
 			});
 			return existing._id;
-		} else {
-			// Create new
-			return await ctx.db.insert('readingPositions', args.position);
 		}
+
+		return await ctx.db.insert('readingPositions', args.position);
 	}
 });
 
@@ -66,6 +73,11 @@ export const deletePosition = mutation({
 		userId: v.id('users')
 	},
 	handler: async (ctx, args) => {
+		const book = await ctx.db.get(args.bookId);
+		if (!book || book.userId !== args.userId) {
+			throw new Error('Unauthorized');
+		}
+
 		const position = await ctx.db
 			.query('readingPositions')
 			.withIndex('by_book_user', (q) => q.eq('bookId', args.bookId).eq('userId', args.userId))
