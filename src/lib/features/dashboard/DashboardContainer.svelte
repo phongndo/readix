@@ -1,7 +1,5 @@
 <script lang="ts">
-	import { Plus } from '@lucide/svelte';
 	import { useClerkContext } from 'svelte-clerk/client';
-	import Button from '$lib/components/ui/button/button.svelte';
 	import StatsCards from '$lib/features/dashboard/StatsCards.svelte';
 	import ContributionCalendar from '$lib/components/organisms/contribution-calendar/contribution-calendar.svelte';
 	import RecentBooks from '$lib/features/dashboard/RecentBooks.svelte';
@@ -85,7 +83,7 @@
 <div class="min-h-screen bg-background">
 	<main class="container mx-auto px-4 py-6">
 		<!-- Welcome -->
-		<div class="mb-6 flex items-center justify-between">
+		<div class="mb-6">
 			<div>
 				<h1 class="text-2xl font-bold">
 					{#if isLoading}
@@ -96,10 +94,6 @@
 				</h1>
 				<p class="text-muted-foreground">Track your reading progress and build your streak</p>
 			</div>
-			<Button onclick={handleAddBookClick}>
-				<Plus class="mr-2 h-4 w-4" />
-				Add Book
-			</Button>
 		</div>
 
 		<!-- Stats -->
