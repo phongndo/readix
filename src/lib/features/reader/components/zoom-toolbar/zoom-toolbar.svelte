@@ -87,9 +87,8 @@
 				<button
 					{...props}
 					onclick={togglePresets}
-					class="flex h-8 min-w-[80px] items-center justify-center gap-1 rounded-md px-2 text-sm font-medium hover:bg-accent"
+					class="flex h-8 min-w-[72px] items-center justify-center rounded-md px-2 text-sm font-medium hover:bg-accent"
 				>
-					<ZoomIn class="h-3.5 w-3.5" />
 					<span>{formatZoomLevel()}</span>
 				</button>
 			{/snippet}
