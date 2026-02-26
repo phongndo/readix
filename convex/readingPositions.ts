@@ -51,16 +51,34 @@ export const savePosition = mutation({
 			.withIndex('by_book_user', (q) => q.eq('bookId', bookId).eq('userId', userId))
 			.first();
 
+		const normalizedTotalPages = Math.max(1, Math.floor(book.totalPages || 1));
+		const normalizedPage = Math.max(
+			0,
+			Math.min(Math.floor(args.position.page), normalizedTotalPages)
+		);
+		const isCompleted = normalizedPage >= normalizedTotalPages;
+
+		if (book.currentPage !== normalizedPage || book.isCompleted !== isCompleted) {
+			await ctx.db.patch(bookId, {
+				currentPage: normalizedPage,
+				isCompleted,
+				updatedAt: Date.now()
+			});
+		}
+
 		if (existing) {
 			await ctx.db.patch(existing._id, {
-				page: args.position.page,
+				page: normalizedPage,
 				scrollOffset: args.position.scrollOffset,
 				timestamp: args.position.timestamp
 			});
 			return existing._id;
 		}
 
-		return await ctx.db.insert('readingPositions', args.position);
+		return await ctx.db.insert('readingPositions', {
+			...args.position,
+			page: normalizedPage
+		});
 	}
 });
 
