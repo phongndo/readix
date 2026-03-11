@@ -4,6 +4,7 @@
 	import type { Book } from '$lib/domain/book/Book';
 	import type { UploadFormData } from '$lib/components/organisms/upload-modal/upload-modal.svelte';
 	import type { DeletePreview } from '$lib/services/bookService';
+	import { libraryState } from '$lib/state/libraryState.svelte';
 
 	let {
 		books,
@@ -23,5 +24,23 @@
 </script>
 
 <Tooltip.Provider>
-	<LibraryView {books} {isLoading} {error} {onUploadBook} {onDeleteBook} {onGetDeletePreview} />
+	<LibraryView
+		{books}
+		filteredBooks={libraryState.filteredBooks}
+		{isLoading}
+		{error}
+		searchQuery={libraryState.state.searchQuery}
+		activeFilter={libraryState.state.activeFilter}
+		filterCounts={libraryState.filterCounts}
+		sortBy={libraryState.state.sortBy}
+		viewMode={libraryState.state.viewMode}
+		{onUploadBook}
+		{onDeleteBook}
+		{onGetDeletePreview}
+		onSearch={(query) => libraryState.setSearchQuery(query)}
+		onFilterChange={(filter) => libraryState.setActiveFilter(filter)}
+		onSortChange={(sortBy) => libraryState.setSortBy(sortBy)}
+		onViewModeChange={(viewMode) => libraryState.setViewMode(viewMode)}
+		userId="user-1"
+	/>
 </Tooltip.Provider>

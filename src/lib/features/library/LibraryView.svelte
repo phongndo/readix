@@ -12,22 +12,47 @@
 	import DeleteBookDialog from '$lib/features/library/DeleteBookDialog.svelte';
 	import type { DeletePreview } from '$lib/services/bookService';
 	import type { Book } from '$lib/domain/book/Book';
-	import { libraryState } from '$lib/state/libraryState.svelte';
 
 	let {
 		books = [],
+		filteredBooks = [],
 		isLoading = false,
 		error = null,
+		searchQuery = '',
+		activeFilter = 'all',
+		filterCounts,
+		sortBy = 'updated',
+		viewMode = 'grid',
 		onUploadBook,
 		onDeleteBook,
-		onGetDeletePreview
+		onGetDeletePreview,
+		onSearch,
+		onFilterChange,
+		onSortChange,
+		onViewModeChange,
+		userId
 	} = $props<{
 		books?: Book[];
+		filteredBooks?: Book[];
 		isLoading?: boolean;
 		error?: string | null;
+		searchQuery?: string;
+		activeFilter?: 'all' | 'in-progress' | 'completed';
+		filterCounts: {
+			all: number;
+			inProgress: number;
+			completed: number;
+		};
+		sortBy?: 'updated' | 'title' | 'author' | 'progress';
+		viewMode?: 'grid' | 'list';
 		onUploadBook: (formData: UploadFormData) => Promise<void>;
 		onDeleteBook: (book: Book) => Promise<void>;
 		onGetDeletePreview: (bookId: string) => Promise<DeletePreview>;
+		onSearch: (query: string) => void;
+		onFilterChange: (filter: 'all' | 'in-progress' | 'completed') => void;
+		onSortChange: (sort: 'updated' | 'title' | 'author' | 'progress') => void;
+		onViewModeChange: (mode: 'grid' | 'list') => void;
+		userId?: string;
 	}>();
 
 	let showUploadModal = $state(false);
@@ -37,9 +62,7 @@
 	let deleteDialogError = $state<string | null>(null);
 	let isPreviewLoading = $state(false);
 	let isDeleting = $state(false);
-	const totalBooks = $derived(
-		libraryState.filterCounts.all > 0 ? libraryState.filterCounts.all : books.length
-	);
+	const totalBooks = $derived(filterCounts.all > 0 ? filterCounts.all : books.length);
 
 	function handleBookClick(book: Book) {
 		// eslint-disable-next-line svelte/no-navigation-without-resolve
@@ -113,43 +136,40 @@
 	<div class="grid gap-3 sm:grid-cols-3">
 		<div class="rounded-md border bg-card px-4 py-3">
 			<p class="text-xs uppercase tracking-wide text-muted-foreground">Total</p>
-			<p class="text-xl font-semibold">{libraryState.filterCounts.all}</p>
+			<p class="text-xl font-semibold">{filterCounts.all}</p>
 		</div>
 		<div class="rounded-md border bg-card px-4 py-3">
 			<p class="text-xs uppercase tracking-wide text-muted-foreground">In Progress</p>
-			<p class="text-xl font-semibold">{libraryState.filterCounts.inProgress}</p>
+			<p class="text-xl font-semibold">{filterCounts.inProgress}</p>
 		</div>
 		<div class="rounded-md border bg-card px-4 py-3">
 			<p class="text-xs uppercase tracking-wide text-muted-foreground">Completed</p>
-			<p class="text-xl font-semibold">{libraryState.filterCounts.completed}</p>
+			<p class="text-xl font-semibold">{filterCounts.completed}</p>
 		</div>
 	</div>
 
 	<!-- Toolbar with search, filters, and sort -->
 	<LibraryToolbar
-		bind:searchQuery={libraryState.state.searchQuery}
-		resultCount={libraryState.filteredBooks.length}
-		activeFilter={libraryState.state.activeFilter}
-		filterCounts={libraryState.filterCounts}
-		sortBy={libraryState.state.sortBy}
-		viewMode={libraryState.state.viewMode}
-		onSearch={(q) => libraryState.setSearchQuery(q)}
-		onFilterChange={(f) => libraryState.setActiveFilter(f)}
-		onSortChange={(s) => libraryState.setSortBy(s)}
-		onViewModeChange={(m) => libraryState.setViewMode(m)}
+		{searchQuery}
+		resultCount={filteredBooks.length}
+		{activeFilter}
+		{filterCounts}
+		{sortBy}
+		{viewMode}
+		{onSearch}
+		{onFilterChange}
+		{onSortChange}
+		{onViewModeChange}
 	/>
 
 	<!-- Book grid or empty state -->
-	{#if libraryState.state.searchQuery && libraryState.filteredBooks.length === 0}
-		<EmptySearchState
-			searchQuery={libraryState.state.searchQuery}
-			onClear={() => libraryState.setSearchQuery('')}
-		/>
-	{:else if libraryState.filteredBooks.length === 0}
+	{#if searchQuery && filteredBooks.length === 0}
+		<EmptySearchState {searchQuery} onClear={() => onSearch('')} />
+	{:else if filteredBooks.length === 0}
 		<BookGrid books={[]} {isLoading} {error} onBookClick={undefined} onBookDelete={undefined} />
-	{:else if libraryState.state.viewMode === 'grid'}
+	{:else if viewMode === 'grid'}
 		<BookGrid
-			books={libraryState.filteredBooks}
+			books={filteredBooks}
 			{isLoading}
 			{error}
 			onBookClick={handleBookClick}
@@ -157,7 +177,7 @@
 		/>
 	{:else}
 		<div class="space-y-2">
-			{#each libraryState.filteredBooks as book (book.id)}
+			{#each filteredBooks as book (book.id)}
 				<BookListItem
 					{book}
 					onRead={() => handleBookClick(book)}
@@ -168,7 +188,7 @@
 	{/if}
 </div>
 
-<UploadModal bind:open={showUploadModal} onSubmit={handleUploadSubmit} />
+<UploadModal bind:open={showUploadModal} {userId} onSubmit={handleUploadSubmit} />
 
 {#if showDeleteDialog && bookPendingDelete}
 	<DeleteBookDialog

@@ -1,10 +1,21 @@
 import { action, internalMutation } from './_generated/server';
-import { internal } from './_generated/api';
+import { api, internal } from './_generated/api';
 import { v } from 'convex/values';
+
+type ExtractedPageText = {
+	page: number;
+	text: string;
+};
+
+type ExtractedFileContent = {
+	extractedText: string;
+	totalPages?: number;
+	pages: ExtractedPageText[];
+};
 
 /**
  * Extract text from a file based on its type.
- * Supported formats: PDF, EPUB, TXT
+ * Supported formats: PDF and TXT
  */
 export const extractTextFromFile = action({
 	args: {
@@ -35,22 +46,31 @@ export const extractTextFromFile = action({
 			const blob = await response.blob();
 			let extractedText = '';
 			let totalPages: number | undefined;
+			let pages: ExtractedPageText[] = [];
 
 			// Extract text based on file type
 			if (args.fileType === 'text/plain' || args.fileType === '.txt') {
-				extractedText = await extractFromTxt(blob);
-				totalPages = estimatePageCount(extractedText);
+				const extractedContent = await extractFromTxt(blob);
+				extractedText = extractedContent.extractedText;
+				totalPages = extractedContent.totalPages;
+				pages = extractedContent.pages;
 			} else if (args.fileType === 'application/pdf' || args.fileType === '.pdf') {
-				extractedText = await extractFromPdf(blob);
-			} else if (args.fileType === 'application/epub+zip' || args.fileType === '.epub') {
-				extractedText = await extractFromEpub(blob);
-				totalPages = estimatePageCount(extractedText);
+				const extractedContent = await extractFromPdf(blob);
+				extractedText = extractedContent.extractedText;
+				totalPages = extractedContent.totalPages;
+				pages = extractedContent.pages;
 			} else {
 				throw new Error(`Unsupported file type: ${args.fileType}`);
 			}
 
 			// Clean up the text
 			extractedText = cleanExtractedText(extractedText);
+			pages = pages
+				.map((page) => ({
+					page: page.page,
+					text: cleanExtractedText(page.text)
+				}))
+				.filter((page) => page.text.length > 0);
 
 			// Save extracted text
 			await ctx.runMutation(internal.extraction.saveExtractedContent, {
@@ -58,6 +78,20 @@ export const extractTextFromFile = action({
 				extractedText,
 				status: 'completed'
 			});
+
+			await ctx.runMutation(api.documentText.deleteDocumentText, {
+				bookId: args.bookId
+			});
+
+			for (const page of pages) {
+				await ctx.runMutation(api.documentText.savePageText, {
+					bookId: args.bookId,
+					page: page.page,
+					text: page.text,
+					wordCount: countWords(page.text),
+					createdAt: Date.now()
+				});
+			}
 
 			// Update book with extracted content.
 			// For PDFs, totalPages is set during upload from the actual document metadata.
@@ -89,32 +123,57 @@ export const extractTextFromFile = action({
 /**
  * Extract text from a plain text file.
  */
-async function extractFromTxt(blob: Blob): Promise<string> {
+async function extractFromTxt(blob: Blob): Promise<ExtractedFileContent> {
 	const text = await blob.text();
-	return text;
+	return {
+		extractedText: text,
+		totalPages: estimatePageCount(text),
+		pages: paginatePlainText(text)
+	};
 }
 
 /**
  * Extract text from a PDF file.
- * Note: This is a basic implementation. For production, use pdf-parse library.
  */
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-async function extractFromPdf(blob: Blob): Promise<string> {
-	// For now, return placeholder text
-	// In production, you'd use pdf-parse or pdfjs-dist
-	// This requires setting up the library in Convex's environment
-	return '[PDF content extraction requires pdf-parse library setup]';
-}
+async function extractFromPdf(blob: Blob): Promise<ExtractedFileContent> {
+	const pdfjs = await import('pdfjs-dist/legacy/build/pdf.mjs');
+	const fileBuffer = await blob.arrayBuffer();
+	const loadingTask = pdfjs.getDocument({ data: fileBuffer });
+	const pdfDocument = await loadingTask.promise;
 
-/**
- * Extract text from an EPUB file.
- * Note: This requires epub.js library in production.
- */
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-async function extractFromEpub(blob: Blob): Promise<string> {
-	// For now, return placeholder text
-	// In production, you'd use epub.js
-	return '[EPUB content extraction requires epub.js library setup]';
+	try {
+		const pages: ExtractedPageText[] = [];
+
+		for (let pageNumber = 1; pageNumber <= pdfDocument.numPages; pageNumber += 1) {
+			const page = await pdfDocument.getPage(pageNumber);
+			try {
+				const textContent = await page.getTextContent();
+				const text = textContent.items
+					.map((item) => ('str' in item ? item.str : ''))
+					.join(' ')
+					.replace(/\s+/g, ' ')
+					.trim();
+
+				pages.push({
+					page: pageNumber,
+					text
+				});
+			} finally {
+				page.cleanup();
+			}
+		}
+
+		return {
+			extractedText: pages
+				.map((page) => page.text)
+				.filter(Boolean)
+				.join('\n\n'),
+			totalPages: pdfDocument.numPages,
+			pages
+		};
+	} finally {
+		await pdfDocument.destroy();
+	}
 }
 
 /**
@@ -135,6 +194,42 @@ function cleanExtractedText(text: string): string {
 function estimatePageCount(text: string): number {
 	const charsPerPage = 3000;
 	return Math.max(1, Math.ceil(text.length / charsPerPage));
+}
+
+function paginatePlainText(text: string): ExtractedPageText[] {
+	const normalized = cleanExtractedText(text);
+	if (!normalized) {
+		return [];
+	}
+
+	const chunkSize = 3000;
+	const pages: ExtractedPageText[] = [];
+	let start = 0;
+	let page = 1;
+
+	while (start < normalized.length) {
+		let end = Math.min(normalized.length, start + chunkSize);
+		if (end < normalized.length) {
+			const splitIndex = normalized.lastIndexOf(' ', end);
+			if (splitIndex > start + chunkSize / 2) {
+				end = splitIndex;
+			}
+		}
+
+		pages.push({
+			page,
+			text: normalized.slice(start, end).trim()
+		});
+
+		start = end;
+		page += 1;
+	}
+
+	return pages.filter((entry) => entry.text.length > 0);
+}
+
+function countWords(text: string): number {
+	return text.split(/\s+/).filter(Boolean).length;
 }
 
 /**

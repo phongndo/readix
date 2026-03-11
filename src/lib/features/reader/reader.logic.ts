@@ -1,7 +1,6 @@
 import { Effect } from 'effect';
 import { browser } from '$app/environment';
 import { readingState } from '$lib/state/readingState.svelte';
-import { libraryState } from '$lib/state/libraryState.svelte';
 import { updateBookProgress } from '$lib/services/bookService';
 import { recordReadingSession } from '$lib/services/progressService';
 import type { Book } from '$lib/domain/book/Book';
@@ -65,8 +64,6 @@ export async function saveProgress(userId: string): Promise<string[]> {
 				)
 			);
 		}
-
-		libraryState.updateBook(bookId as unknown as string, { currentPage: endPage });
 
 		return newAchievements;
 	} catch (error) {

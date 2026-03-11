@@ -2,7 +2,7 @@
 	import { page } from '$app/state';
 	import { resolve } from '$app/paths';
 	import { UserButton } from 'svelte-clerk/client';
-	import { BookOpen, User, Bell } from '@lucide/svelte';
+	import { BookOpen, Monitor, User } from '@lucide/svelte';
 	import { cn } from '$lib/classnames.js';
 
 	let pathname = $derived(page.url.pathname);
@@ -10,6 +10,7 @@
 
 	const navItems = [
 		{ href: '/library', label: 'Library', icon: BookOpen },
+		{ href: '/workspace', label: 'Workspace', icon: Monitor },
 		{ href: '/profile', label: 'Profile', icon: User }
 	] as const;
 </script>
@@ -63,13 +64,6 @@
 
 			<!-- Right side -->
 			<div class="flex items-center gap-2">
-				<button
-					type="button"
-					class="relative rounded-md p-2 text-muted-foreground hover:bg-accent hover:text-foreground"
-				>
-					<Bell class="h-5 w-5" />
-					<span class="absolute right-1 top-1 h-2 w-2 rounded-full bg-primary"></span>
-				</button>
 				<UserButton />
 			</div>
 		</div>

@@ -6,11 +6,9 @@
 	import EmptyState from '$lib/features/dashboard/EmptyState.svelte';
 	import UploadModal from '$lib/components/organisms/upload-modal/upload-modal.svelte';
 	import type { UploadFormData } from '$lib/components/organisms/upload-modal/upload-modal.svelte';
-	import { libraryState } from '$lib/state/libraryState.svelte';
 	import type { Book } from '$lib/domain/book/Book';
 	import { uploadBookWithFile } from '$lib/services/bookService';
 	import { Effect } from 'effect';
-	import { browser } from '$app/environment';
 
 	let {
 		data
@@ -31,6 +29,7 @@
 
 	let showUploadModal = $state(false);
 	let isLoading = $state(false);
+	let dashboardBooks = $derived(data.books ?? []);
 
 	const ctx = useClerkContext();
 	const user = $derived(ctx.user);
@@ -39,9 +38,7 @@
 	const activity = $derived(data.activity || []);
 
 	$effect(() => {
-		if (browser && data.books) {
-			libraryState.setBooks(data.books);
-		}
+		dashboardBooks = data.books ?? [];
 	});
 
 	function handleAddBookClick() {
@@ -67,7 +64,7 @@
 					coverUrl: formData.coverUrl
 				})
 			);
-			libraryState.addBook(createdBook);
+			dashboardBooks = [createdBook, ...dashboardBooks];
 			showUploadModal = false;
 		} catch (error) {
 			console.error('Failed to upload book:', error);
@@ -113,12 +110,12 @@
 		</div>
 
 		<!-- Books Section -->
-		{#if libraryState.state.books.length === 0}
+		{#if dashboardBooks.length === 0}
 			<EmptyState onAddBook={handleAddBookClick} />
 		{:else}
-			<RecentBooks books={libraryState.state.books} />
+			<RecentBooks books={dashboardBooks} />
 		{/if}
 	</main>
 </div>
 
-<UploadModal bind:open={showUploadModal} onSubmit={handleUploadBook} />
+<UploadModal bind:open={showUploadModal} userId={user?.id} onSubmit={handleUploadBook} />

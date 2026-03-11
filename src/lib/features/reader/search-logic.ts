@@ -1,8 +1,7 @@
 import { Effect } from 'effect';
 import Fuse from 'fuse.js';
-import { convexClient } from '$lib/convex/client';
-import { api } from '$lib/convex/api';
 import type { Id } from '$lib/convex/api';
+import { searchDocumentPages } from '$lib/services/documentSearchService';
 import type { SearchResult } from './reader.types';
 
 // Fuse.js options for fuzzy search
@@ -218,32 +217,20 @@ export function searchServerSide(
 	bookId: Id<'books'>,
 	query: string
 ): Effect.Effect<SearchResult[], Error, never> {
-	return Effect.tryPromise({
-		try: async () => {
-			if (!query.trim() || query.length < 3) {
-				return [];
-			}
+	return searchDocumentPages(bookId, query).pipe(
+		Effect.map((results) =>
+			results.map((doc, index) => {
+				const { snippet, matchRanges } = extractSnippet(doc.text, query);
 
-			const results = await convexClient.query(api.documentText.searchDocument, {
-				bookId,
-				query
-			});
-
-			return results.map(
-				(doc: { page: number; text: string; wordCount: number }, index: number) => {
-					const { snippet, matchRanges } = extractSnippet(doc.text, query);
-
-					return {
-						page: doc.page,
-						text: snippet,
-						matchRanges,
-						score: index * 0.1 // Lower score = higher relevance
-					};
-				}
-			);
-		},
-		catch: (error) => new Error(`Server search failed: ${error}`)
-	});
+				return {
+					page: doc.page,
+					text: snippet,
+					matchRanges,
+					score: index * 0.1
+				};
+			})
+		)
+	);
 }
 
 /**

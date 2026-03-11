@@ -4,6 +4,10 @@ import LibraryViewTestWrapper from './LibraryViewTestWrapper.svelte';
 import { libraryState } from '$lib/state/libraryState.svelte';
 import type { Book } from '$lib/domain/book/Book';
 
+vi.mock('$lib/services/bookService', () => ({
+	checkDuplicateCandidates: vi.fn()
+}));
+
 vi.mock('$app/navigation', () => ({
 	goto: vi.fn()
 }));

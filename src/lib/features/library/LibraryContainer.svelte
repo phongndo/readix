@@ -182,10 +182,21 @@
 <div class="container mx-auto max-w-6xl p-4">
 	<LibraryView
 		books={libraryState.state.books}
+		filteredBooks={libraryState.filteredBooks}
 		isLoading={libraryState.state.isLoading || isMutating}
 		error={requestError || libraryState.state.error}
+		searchQuery={libraryState.state.searchQuery}
+		activeFilter={libraryState.state.activeFilter}
+		filterCounts={libraryState.filterCounts}
+		sortBy={libraryState.state.sortBy}
+		viewMode={libraryState.state.viewMode}
 		onUploadBook={handleUploadBook}
 		onDeleteBook={handleDeleteBook}
 		onGetDeletePreview={handleGetDeletePreview}
+		onSearch={(query) => libraryState.setSearchQuery(query)}
+		onFilterChange={(filter) => libraryState.setActiveFilter(filter)}
+		onSortChange={(sortBy) => libraryState.setSortBy(sortBy)}
+		onViewModeChange={(viewMode) => libraryState.setViewMode(viewMode)}
+		userId={page.data.userId}
 	/>
 </div>

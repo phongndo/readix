@@ -2,6 +2,8 @@ import { Effect, Option } from 'effect';
 import { CreateBookInput, BookId, UserId, type Book } from '$lib/domain/book/Book';
 import { DatabaseError, NotFoundError, ValidationError, type AppError } from '$lib/effect/errors';
 import { calculateProgressPercentage } from '$lib/domain/book/bookRules';
+import { areFuzzyDuplicateCandidates } from '$lib/domain/book/duplicateRules';
+import { normalizeAuthor, normalizeTitle } from '$lib/domain/book/metadataNormalization';
 import { convexClient } from '$lib/convex/client';
 import { api, type Id } from '$lib/convex/api';
 import { extractPdfUploadMetadata } from '$lib/services/document/pdf-thumbnail';
@@ -21,6 +23,20 @@ export type DeletePreview = {
 		fileStorage: number;
 	};
 	totalRecords: number;
+};
+
+export type DuplicateCandidate = {
+	bookId: string;
+	title: string;
+	author?: string;
+	totalPages: number;
+	createdAt: number;
+	updatedAt: number;
+};
+
+export type DuplicateCheckResult = {
+	exactDuplicates: DuplicateCandidate[];
+	fuzzyDuplicates: DuplicateCandidate[];
 };
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -174,6 +190,76 @@ export function fetchDeletePreview(
 
 export function getBookProgress(book: Book): number {
 	return calculateProgressPercentage(book);
+}
+
+export function checkDuplicateCandidates(
+	userId: string,
+	input: {
+		title: string;
+		author?: string;
+		totalPages: number;
+		fileHash?: string;
+	}
+): Effect.Effect<DuplicateCheckResult, AppError> {
+	return fetchBooksByUser(userId).pipe(
+		Effect.map((books) => {
+			const normalizedTitle = normalizeTitle(input.title);
+			const normalizedAuthor = normalizeAuthor(input.author);
+			const normalizedTotalPages = Math.max(1, Math.floor(input.totalPages || 1));
+
+			if (!normalizedTitle) {
+				return {
+					exactDuplicates: [],
+					fuzzyDuplicates: []
+				};
+			}
+
+			const exactDuplicates: DuplicateCandidate[] = [];
+			const fuzzyDuplicates: DuplicateCandidate[] = [];
+
+			for (const book of books) {
+				const bookCandidate: DuplicateCandidate = {
+					bookId: book.id,
+					title: book.title,
+					author: book.author,
+					totalPages: book.totalPages,
+					createdAt: book.createdAt.getTime(),
+					updatedAt: book.updatedAt.getTime()
+				};
+
+				const normalizedBookTitle = normalizeTitle(book.title);
+				const normalizedBookAuthor = normalizeAuthor(book.author);
+				const sameTitle = normalizedBookTitle === normalizedTitle;
+				const sameAuthor =
+					!normalizedAuthor || !normalizedBookAuthor || normalizedAuthor === normalizedBookAuthor;
+				const samePageCount =
+					Math.max(1, Math.floor(book.totalPages || 1)) === normalizedTotalPages;
+
+				if (sameTitle && sameAuthor && samePageCount) {
+					exactDuplicates.push(bookCandidate);
+					continue;
+				}
+
+				if (
+					areFuzzyDuplicateCandidates({
+						titleA: input.title,
+						authorA: input.author,
+						totalPagesA: normalizedTotalPages,
+						titleB: book.title,
+						authorB: book.author,
+						totalPagesB: Math.max(1, Math.floor(book.totalPages || 1))
+					})
+				) {
+					fuzzyDuplicates.push(bookCandidate);
+				}
+			}
+
+			return {
+				exactDuplicates,
+				fuzzyDuplicates
+			};
+		})
+	);
 }
 
 /**

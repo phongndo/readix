@@ -4,7 +4,6 @@
 	import { browser } from '$app/environment';
 	import { Effect, Option } from 'effect';
 	import { readerStore } from '$lib/features/reader/reader.store.svelte';
-	import { createPositionTracker } from '$lib/features/reader/position-tracker';
 	import {
 		calculateScrollProgress,
 		restoreScrollPosition
@@ -12,6 +11,7 @@
 	import { fetchBookmarks, lookupConvexUserId } from '$lib/services/bookmarkService';
 	import { fetchAnnotations, createAnnotation } from '$lib/services/annotationService';
 	import { syncBookTotalPages } from '$lib/services/bookService';
+	import { createPositionTracker } from '$lib/services/readingPositionService';
 	import { toastState } from '$lib/state/toastState.svelte';
 	import { createSearchIndex } from '$lib/features/reader/search-logic';
 	import { PdfRenderManager, type RenderTextItem } from '$lib/features/reader/pdf-render-manager';

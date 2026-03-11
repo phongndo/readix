@@ -1,10 +1,16 @@
 import { buildClerkProps } from 'svelte-clerk/server';
-import { redirect } from '@sveltejs/kit';
+import { error, redirect } from '@sveltejs/kit';
+import { env } from '$env/dynamic/public';
 import type { LayoutServerLoad } from './$types';
 
 const getClerkPortalUrl = (redirectUrl: string) => {
-	const baseUrl = 'https://immortal-locust-40.accounts.dev/sign-in';
-	return `${baseUrl}?redirect_url=${encodeURIComponent(redirectUrl)}`;
+	const baseUrl = env.PUBLIC_CLERK_SIGN_IN_URL;
+	if (!baseUrl) {
+		error(500, 'PUBLIC_CLERK_SIGN_IN_URL is not configured');
+	}
+	const signInUrl = new URL(baseUrl);
+	signInUrl.searchParams.set('redirect_url', redirectUrl);
+	return signInUrl.toString();
 };
 
 export const load: LayoutServerLoad = ({ locals, url }) => {

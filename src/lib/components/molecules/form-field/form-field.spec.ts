@@ -41,7 +41,7 @@ describe('FormField', () => {
 	});
 
 	it('displays error message', async () => {
-		const { getByText } = render(FormField, {
+		const { getByRole } = render(FormField, {
 			props: {
 				label: 'Title',
 				name: 'title',
@@ -49,7 +49,7 @@ describe('FormField', () => {
 				error: 'Title is required'
 			}
 		});
-		await expect.element(getByText('Title is required')).toBeInTheDocument();
+		await expect.element(getByRole('alert')).toHaveTextContent('Title is required');
 	});
 
 	it('applies custom rows for textarea', async () => {

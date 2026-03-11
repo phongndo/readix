@@ -3,6 +3,7 @@ import { convexClient } from '$lib/convex/client';
 import { api, type Id } from '$lib/convex/api';
 import { DatabaseError } from '$lib/effect/errors';
 import type { Bookmark } from '$lib/domain/reading/ReadingPosition';
+import { lookupConvexUserByClerkId } from '$lib/services/userService';
 
 export type BookmarkColor = 'yellow' | 'green' | 'blue' | 'pink' | 'purple';
 
@@ -103,8 +104,5 @@ export function updateBookmark(
 export function lookupConvexUserId(
 	clerkId: string
 ): Effect.Effect<{ _id: string } | null, DatabaseError> {
-	return Effect.tryPromise({
-		try: () => convexClient.query(api.users.getByClerkId, { clerkId }),
-		catch: (error) => new DatabaseError('Failed to lookup user', error)
-	});
+	return lookupConvexUserByClerkId(clerkId);
 }
