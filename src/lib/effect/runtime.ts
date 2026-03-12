@@ -1,15 +1,16 @@
-import { Effect, Layer } from 'effect';
-import { type AppError } from './errors';
+import { Effect, Layer, ManagedRuntime } from 'effect';
 
-export type EffectResult<T> = Effect.Effect<T, AppError>;
+const appRuntime = ManagedRuntime.make(Layer.empty);
 
-export const AppRuntime = <T>(effect: Effect.Effect<T, AppError>): Promise<T> =>
-	Effect.runPromise(effect);
+export type EffectResult<T, E = unknown, R = never> = Effect.Effect<T, E, R>;
 
-export const defaultLayer = Layer.empty;
+export const runAppEffect = <T, E>(effect: Effect.Effect<T, E, never>): Promise<T> =>
+	appRuntime.runPromise(effect);
 
-export function withDefaultLayer<T>(
-	effect: Effect.Effect<T, AppError>
-): Effect.Effect<T, AppError> {
-	return effect;
+export const AppRuntime = runAppEffect;
+
+export function forkLoggedEffect<T, E>(effect: Effect.Effect<T, E, never>, context: string): void {
+	void runAppEffect(effect).catch((error) => {
+		console.error(`${context}:`, error);
+	});
 }

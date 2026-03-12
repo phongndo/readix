@@ -1,11 +1,11 @@
 <script lang="ts">
-	import { Effect } from 'effect';
 	import { X, FileText } from '@lucide/svelte';
 	import * as Dialog from '$lib/components/ui/dialog/dialog.svelte';
 	import DialogHeader from '$lib/components/ui/dialog/dialog-header.svelte';
 	import Button from '$lib/components/ui/button/button.svelte';
 	import FormField from '$lib/components/molecules/form-field/form-field.svelte';
 	import FileUploadZone from '$lib/components/molecules/file-upload-zone/file-upload-zone.svelte';
+	import { runAppEffect } from '$lib/effect/runtime';
 	import { sanitizeExtractedMetadata } from '$lib/domain/book/metadataNormalization';
 	import { checkDuplicateCandidates, type DuplicateCheckResult } from '$lib/services/bookService';
 	import { extractPdfUploadMetadata } from '$lib/services/document/pdf-thumbnail';
@@ -160,7 +160,7 @@
 		}
 
 		try {
-			const nextDuplicateCheck = await Effect.runPromise(
+			const nextDuplicateCheck = await runAppEffect(
 				checkDuplicateCandidates(userId, {
 					title,
 					author: author || undefined,

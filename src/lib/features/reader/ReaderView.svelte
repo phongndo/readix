@@ -1,11 +1,12 @@
 <script lang="ts">
 	import { onMount, onDestroy } from 'svelte';
 	import { browser } from '$app/environment';
-	import { Effect, Option } from 'effect';
+	import { Option } from 'effect';
 	import PdfViewer from '$lib/features/reader/components/pdf-viewer/pdf-viewer.svelte';
 	import ReaderToolbar from '$lib/features/reader/components/reader-toolbar/reader-toolbar.svelte';
 	import ReaderSidebar from '$lib/features/reader/components/reader-sidebar/reader-sidebar.svelte';
 	import BookmarkDialog from '$lib/features/reader/components/bookmark-dialog/bookmark-dialog.svelte';
+	import { runAppEffect } from '$lib/effect/runtime';
 	import {
 		initKeyboardShortcuts,
 		cleanupKeyboardShortcuts
@@ -79,7 +80,7 @@
 
 		try {
 			// Lookup Convex user ID
-			const convexUser = await Effect.runPromise(lookupConvexUserId(clerkId));
+			const convexUser = await runAppEffect(lookupConvexUserId(clerkId));
 			if (!convexUser) {
 				toastState.showError('User not found');
 				return;
@@ -88,7 +89,7 @@
 			const currentPageNum = readerStore.currentPage;
 
 			// Create bookmark
-			const bookmarkId = await Effect.runPromise(
+			const bookmarkId = await runAppEffect(
 				createBookmark({
 					bookId: book.id,
 					userId: convexUser._id,
@@ -127,7 +128,7 @@
 		}
 
 		try {
-			await Effect.runPromise(deleteBookmark(bookmark.id, bookmark.userId));
+			await runAppEffect(deleteBookmark(bookmark.id, bookmark.userId));
 			readerStore.deleteBookmark(bookmark.id);
 			toastState.showSuccess('Bookmark deleted');
 		} catch (err) {

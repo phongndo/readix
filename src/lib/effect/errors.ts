@@ -1,33 +1,45 @@
 import { Effect } from 'effect';
 
-export class DatabaseError {
+export class DatabaseError extends Error {
 	readonly _tag = 'DatabaseError';
 	constructor(
 		readonly message: string,
 		readonly cause?: unknown
-	) {}
+	) {
+		super(message);
+		this.name = 'DatabaseError';
+	}
 }
 
-export class ValidationError {
+export class ValidationError extends Error {
 	readonly _tag = 'ValidationError';
 	constructor(
 		readonly message: string,
 		readonly field?: string
-	) {}
+	) {
+		super(message);
+		this.name = 'ValidationError';
+	}
 }
 
-export class NotFoundError {
+export class NotFoundError extends Error {
 	readonly _tag = 'NotFoundError';
 	constructor(
 		readonly message: string,
 		readonly resource: string,
 		readonly id: string
-	) {}
+	) {
+		super(message);
+		this.name = 'NotFoundError';
+	}
 }
 
-export class UnauthorizedError {
+export class UnauthorizedError extends Error {
 	readonly _tag = 'UnauthorizedError';
-	constructor(readonly message: string = 'Unauthorized') {}
+	constructor(readonly message: string = 'Unauthorized') {
+		super(message);
+		this.name = 'UnauthorizedError';
+	}
 }
 
 export type AppError = DatabaseError | ValidationError | NotFoundError | UnauthorizedError;

@@ -55,14 +55,12 @@
 		"vitest-browser-svelte": "^2.0.2"
 	},
 	"dependencies": {
-		"@vercel/analytics": "^1.6.1",
 		"bits-ui": "^2.16.2",
 		"convex": "^1.32.0",
 		"date-fns": "^4.1.0",
 		"effect": "^3.19.19",
 		"fuse.js": "^7.1.0",
 		"pdfjs-dist": "^5.4.624",
-		"svelte-clerk": "^0.20.5",
-		"svelte-tiny-virtual-list": "^3.0.1"
+		"svelte-clerk": "1.0.2"
 	}
 }

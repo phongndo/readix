@@ -5,7 +5,7 @@
 	import type { SearchResult } from '$lib/features/reader/reader.types';
 	import type { Id } from '$lib/convex/api';
 	import { Search } from '@lucide/svelte';
-	import { Effect } from 'effect';
+	import { runAppEffect } from '$lib/effect/runtime';
 
 	export interface SearchPanelProps {
 		bookId: string;
@@ -38,7 +38,7 @@
 		}
 
 		try {
-			const results = await Effect.runPromise(
+			const results = await runAppEffect(
 				hybridSearch(
 					bookId as Id<'books'>,
 					normalizedQuery,

@@ -1,8 +1,8 @@
-import { Effect } from 'effect';
 import { browser } from '$app/environment';
 import { readingState } from '$lib/state/readingState.svelte';
 import { updateBookProgress } from '$lib/services/bookService';
 import { recordReadingSession } from '$lib/services/progressService';
+import { runAppEffect } from '$lib/effect/runtime';
 import type { Book } from '$lib/domain/book/Book';
 
 export function startReading(book: Book): void {
@@ -49,12 +49,11 @@ export async function saveProgress(userId: string): Promise<string[]> {
 	const trackedDurationMinutes = Math.max(durationMinutes, pagesRead > 0 ? 1 : 0);
 
 	try {
-		// Execute Effects using runPromise (browser-safe)
-		await Effect.runPromise(updateBookProgress(bookId as unknown as string, userId, endPage));
+		await runAppEffect(updateBookProgress(bookId as unknown as string, userId, endPage));
 
 		let newAchievements: string[] = [];
 		if (pagesRead > 0 || trackedDurationMinutes > 0) {
-			newAchievements = await Effect.runPromise(
+			newAchievements = await runAppEffect(
 				recordReadingSession(
 					userId,
 					bookId as unknown as string,

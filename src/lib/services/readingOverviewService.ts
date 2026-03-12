@@ -1,4 +1,3 @@
-import { Effect } from 'effect';
 import { fetchBooksByUser } from '$lib/services/bookService';
 import {
 	fetchActivityByDateRange,
@@ -6,6 +5,7 @@ import {
 	fetchUserStats,
 	fetchUserStreak
 } from '$lib/services/progressService';
+import { runAppEffect } from '$lib/effect/runtime';
 import type { Book } from '$lib/domain/book/Book';
 import type { DailyActivity } from '$lib/services/progressService';
 
@@ -69,11 +69,11 @@ export async function loadDashboardOverview(userId?: string | null): Promise<Das
 
 	try {
 		const [books, stats, streak, achievements, activity] = await Promise.all([
-			Effect.runPromise(fetchBooksByUser(userId)),
-			Effect.runPromise(fetchUserStats(userId)),
-			Effect.runPromise(fetchUserStreak(userId)),
-			Effect.runPromise(fetchUserAchievements(userId)),
-			Effect.runPromise(fetchActivityByDateRange(userId, 365))
+			runAppEffect(fetchBooksByUser(userId)),
+			runAppEffect(fetchUserStats(userId)),
+			runAppEffect(fetchUserStreak(userId)),
+			runAppEffect(fetchUserAchievements(userId)),
+			runAppEffect(fetchActivityByDateRange(userId, 365))
 		]);
 
 		return {
@@ -113,9 +113,9 @@ export async function loadProfileOverview(userId?: string | null): Promise<Profi
 
 	try {
 		const [stats, streak, achievements] = await Promise.all([
-			Effect.runPromise(fetchUserStats(userId)),
-			Effect.runPromise(fetchUserStreak(userId)),
-			Effect.runPromise(fetchUserAchievements(userId))
+			runAppEffect(fetchUserStats(userId)),
+			runAppEffect(fetchUserStreak(userId)),
+			runAppEffect(fetchUserAchievements(userId))
 		]);
 
 		return {
@@ -142,6 +142,6 @@ export async function loadProfileOverview(userId?: string | null): Promise<Profi
 
 export async function loadWorkspaceOverview(userId: string): Promise<WorkspaceOverview> {
 	return {
-		books: await Effect.runPromise(fetchBooksByUser(userId))
+		books: await runAppEffect(fetchBooksByUser(userId))
 	};
 }

@@ -1,8 +1,8 @@
 <script lang="ts">
-	import { Effect } from 'effect';
 	import { Bookmark } from '@lucide/svelte';
 	import BookmarkItem from '$lib/features/reader/components/bookmark-item/bookmark-item.svelte';
 	import { readerStore } from '$lib/features/reader/reader.store.svelte';
+	import { runAppEffect } from '$lib/effect/runtime';
 	import { deleteBookmark } from '$lib/services/bookmarkService';
 	import { toastState } from '$lib/state/toastState.svelte';
 	import type { Bookmark as BookmarkType } from '$lib/domain/reading/ReadingPosition';
@@ -34,7 +34,7 @@
 
 	async function handleDeleteBookmark(bookmark: BookmarkType) {
 		try {
-			await Effect.runPromise(deleteBookmark(bookmark.id, bookmark.userId));
+			await runAppEffect(deleteBookmark(bookmark.id, bookmark.userId));
 			readerStore.deleteBookmark(bookmark.id);
 			toastState.showSuccess('Bookmark deleted');
 		} catch (err) {

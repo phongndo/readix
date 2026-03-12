@@ -10,9 +10,9 @@
 		type DeletePreview
 	} from '$lib/services/bookService';
 	import { getPdfPageCountFromUrl } from '$lib/services/document/pdf-metadata';
-	import { Effect } from 'effect';
 	import { browser } from '$app/environment';
 	import { page } from '$app/state';
+	import { runAppEffect } from '$lib/effect/runtime';
 	import type { Book } from '$lib/domain/book/Book';
 	import type { UploadFormData } from '$lib/components/organisms/upload-modal/upload-modal.svelte';
 
@@ -93,7 +93,7 @@
 			repairedBookIds.add(book.id);
 
 			try {
-				const updatedBook = await Effect.runPromise(syncBookTotalPages(book.id, userId, pageCount));
+				const updatedBook = await runAppEffect(syncBookTotalPages(book.id, userId, pageCount));
 				libraryState.updateBook(book.id, {
 					totalPages: updatedBook.totalPages,
 					currentPage: updatedBook.currentPage,
@@ -123,7 +123,7 @@
 		requestError = null;
 		isMutating = true;
 		try {
-			const createdBook = await Effect.runPromise(
+			const createdBook = await runAppEffect(
 				uploadBookWithFile(userId, formData.file, {
 					title: formData.title,
 					author: formData.author,
@@ -151,7 +151,7 @@
 		requestError = null;
 		isMutating = true;
 		try {
-			await Effect.runPromise(deleteBook(book.id, userId));
+			await runAppEffect(deleteBook(book.id, userId));
 			libraryState.removeBook(book.id);
 		} catch (error) {
 			const message = error instanceof Error ? error.message : 'Failed to delete book';
@@ -170,7 +170,7 @@
 		}
 
 		try {
-			return await Effect.runPromise(fetchDeletePreview(bookId, userId));
+			return await runAppEffect(fetchDeletePreview(bookId, userId));
 		} catch (error) {
 			const message = error instanceof Error ? error.message : 'Failed to load delete preview';
 			requestError = message;

@@ -6,9 +6,9 @@
 	import EmptyState from '$lib/features/dashboard/EmptyState.svelte';
 	import UploadModal from '$lib/components/organisms/upload-modal/upload-modal.svelte';
 	import type { UploadFormData } from '$lib/components/organisms/upload-modal/upload-modal.svelte';
+	import { runAppEffect } from '$lib/effect/runtime';
 	import type { Book } from '$lib/domain/book/Book';
 	import { uploadBookWithFile } from '$lib/services/bookService';
-	import { Effect } from 'effect';
 
 	let {
 		data
@@ -56,7 +56,7 @@
 
 		isLoading = true;
 		try {
-			const createdBook = await Effect.runPromise(
+			const createdBook = await runAppEffect(
 				uploadBookWithFile(user.id, formData.file, {
 					title: formData.title,
 					author: formData.author,

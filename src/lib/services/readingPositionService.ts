@@ -4,6 +4,7 @@ import type { ReadingPosition } from '$lib/domain/reading/ReadingPosition';
 import { readerStore } from '$lib/features/reader/reader.store.svelte';
 import { convexClient } from '$lib/convex/client';
 import { api, type Id } from '$lib/convex/api';
+import { forkLoggedEffect } from '$lib/effect/runtime';
 import { lookupConvexUserByClerkId } from '$lib/services/userService';
 
 export function createPositionTracker(
@@ -13,27 +14,41 @@ export function createPositionTracker(
 ) {
 	let lastSavedPosition: ReadingPosition | null = null;
 	let saveTimeout: ReturnType<typeof setTimeout> | null = null;
+	let cachedUserId: Id<'users'> | null = null;
 
-	const lookupUser = () =>
-		lookupConvexUserByClerkId(clerkUserId).pipe(
+	const formatError = (error: unknown): string =>
+		error instanceof Error ? error.message : String(error);
+
+	const resolveUserId = (): Effect.Effect<Id<'users'>, Error, never> => {
+		if (cachedUserId) {
+			return Effect.succeed(cachedUserId);
+		}
+
+		return lookupConvexUserByClerkId(clerkUserId).pipe(
 			Effect.flatMap((user) =>
-				user ? Effect.succeed(user) : Effect.fail(new Error('User not found'))
+				user ? Effect.succeed(user._id as Id<'users'>) : Effect.fail(new Error('User not found'))
 			),
-			Effect.mapError((error) => new Error(`Failed to lookup user: ${error}`))
+			Effect.tap((userId) =>
+				Effect.sync(() => {
+					cachedUserId = userId;
+				})
+			),
+			Effect.mapError((error) => new Error(`Failed to lookup user: ${formatError(error)}`))
 		);
+	};
 
 	const loadPosition = (): Effect.Effect<ReadingPosition | null, Error, never> =>
 		Effect.gen(function* () {
-			const user = yield* lookupUser();
+			const userId = yield* resolveUserId();
 
 			const result = yield* Effect.tryPromise({
 				try: async () => {
 					return (await convexClient.query(api.readingPositions.getPosition, {
 						bookId: bookId as Id<'books'>,
-						userId: user._id as Id<'users'>
+						userId
 					})) as ReadingPosition | null;
 				},
-				catch: (error) => new Error(`Failed to load position: ${error}`)
+				catch: (error) => new Error(`Failed to load position: ${formatError(error)}`)
 			});
 
 			if (result) {
@@ -47,7 +62,7 @@ export function createPositionTracker(
 
 	const savePosition = (): Effect.Effect<void, Error, never> =>
 		Effect.gen(function* () {
-			const user = yield* lookupUser();
+			const userId = yield* resolveUserId();
 
 			const position: ReadingPosition = {
 				bookId,
@@ -68,12 +83,12 @@ export function createPositionTracker(
 						position: {
 							...position,
 							bookId: bookId as Id<'books'>,
-							userId: user._id as Id<'users'>
+							userId
 						}
 					});
 					lastSavedPosition = position;
 				},
-				catch: (error) => new Error(`Failed to save position: ${error}`)
+				catch: (error) => new Error(`Failed to save position: ${formatError(error)}`)
 			});
 		});
 
@@ -83,7 +98,7 @@ export function createPositionTracker(
 		}
 
 		saveTimeout = setTimeout(() => {
-			Effect.runPromise(savePosition()).catch(console.error);
+			forkLoggedEffect(savePosition(), 'Failed to save reading position');
 		}, delayMs);
 	};
 
@@ -119,7 +134,7 @@ export function createPositionTracker(
 
 		saveTimeout = setTimeout(() => {
 			readerStore.setScrollOffset(scrollOffset);
-			Effect.runPromise(savePosition()).catch(console.error);
+			forkLoggedEffect(savePosition(), 'Failed to save reading position');
 		}, 2000);
 	};
 
@@ -133,7 +148,7 @@ export function createPositionTracker(
 		}
 		readerStore.setScrollOffset(offset);
 
-		Effect.runPromise(savePosition()).catch(console.error);
+		forkLoggedEffect(savePosition(), 'Failed to save reading position');
 	};
 
 	const getProgress = (): number => {

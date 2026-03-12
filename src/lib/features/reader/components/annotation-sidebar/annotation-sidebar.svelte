@@ -1,7 +1,7 @@
 <script lang="ts">
-	import { Effect } from 'effect';
 	import { MessageSquare, X } from '@lucide/svelte';
 	import { readerStore } from '$lib/features/reader/reader.store.svelte';
+	import { runAppEffect } from '$lib/effect/runtime';
 	import { deleteAnnotation } from '$lib/services/annotationService';
 	import { toastState } from '$lib/state/toastState.svelte';
 	import type { Annotation } from '$lib/domain/reading/ReadingPosition';
@@ -32,7 +32,7 @@
 
 	async function handleDeleteAnnotation(annotation: Annotation) {
 		try {
-			await Effect.runPromise(deleteAnnotation(annotation.id, annotation.userId));
+			await runAppEffect(deleteAnnotation(annotation.id, annotation.userId));
 			readerStore.removeAnnotation(annotation.id);
 			toastState.showSuccess('Annotation deleted');
 		} catch (err) {

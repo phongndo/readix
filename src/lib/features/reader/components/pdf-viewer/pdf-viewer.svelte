@@ -2,7 +2,8 @@
 	import { onMount, onDestroy } from 'svelte';
 	import { SvelteMap } from 'svelte/reactivity';
 	import { browser } from '$app/environment';
-	import { Effect, Option } from 'effect';
+	import { Option } from 'effect';
+	import { forkLoggedEffect, runAppEffect } from '$lib/effect/runtime';
 	import { readerStore } from '$lib/features/reader/reader.store.svelte';
 	import {
 		calculateScrollProgress,
@@ -65,32 +66,32 @@
 			const pdfModule = await import('$lib/services/document/pdf-engine');
 			engine = new pdfModule.PdfEngine();
 
-			const handle = await Effect.runPromise(engine.load(fileUrl));
+			const handle = await runAppEffect(engine.load(fileUrl));
 			readerStore.setTotalPages(handle.totalPages);
 			appliedZoom = readerStore.zoom;
 			try {
-				await Effect.runPromise(syncBookTotalPages(bookId, userId, handle.totalPages));
+				await runAppEffect(syncBookTotalPages(bookId, userId, handle.totalPages));
 			} catch (syncError) {
 				console.error('Failed to sync total pages:', syncError);
 			}
 
 			try {
-				const dimensions = await Effect.runPromise(engine.getPageDimensions(1));
+				const dimensions = await runAppEffect(engine.getPageDimensions(1));
 				basePageHeight = dimensions.height * 1.5 + 32;
 			} catch {
 				basePageHeight = 1100;
 			}
 
 			positionTracker = createPositionTracker(userId, bookId, 'pdf');
-			const savedPosition = await Effect.runPromise(positionTracker.loadPosition());
+			const savedPosition = await runAppEffect(positionTracker.loadPosition());
 
 			try {
-				const convexUser = await Effect.runPromise(lookupConvexUserId(userId));
+				const convexUser = await runAppEffect(lookupConvexUserId(userId));
 				if (convexUser) {
-					const bookmarks = await Effect.runPromise(fetchBookmarks(bookId, convexUser._id));
+					const bookmarks = await runAppEffect(fetchBookmarks(bookId, convexUser._id));
 					readerStore.loadBookmarks(bookmarks);
 
-					const annotations = await Effect.runPromise(fetchAnnotations(bookId, convexUser._id));
+					const annotations = await runAppEffect(fetchAnnotations(bookId, convexUser._id));
 					readerStore.loadAnnotations(annotations);
 				}
 			} catch (dataErr) {
@@ -111,13 +112,11 @@
 				overscanPages: 5,
 				renderPage: async (pageNum, pageContainer, zoom) => {
 					if (!engine) return;
-					await Effect.runPromise(engine.renderPage(pageNum, pageContainer, 1.5, zoom));
+					await runAppEffect(engine.renderPage(pageNum, pageContainer, 1.5, zoom));
 				},
 				renderTextLayer: async (pageNum, textLayerContainer, zoom) => {
 					if (!engine) return [];
-					return await Effect.runPromise(
-						engine.renderTextLayer(pageNum, textLayerContainer, 1.5, zoom)
-					);
+					return await runAppEffect(engine.renderTextLayer(pageNum, textLayerContainer, 1.5, zoom));
 				},
 				onTextLayerMounted: (pageNum, textLayerElement) => {
 					textLayerContainers.set(pageNum, textLayerElement);
@@ -156,7 +155,7 @@
 		if (positionTracker && browser && container) {
 			const scrollOffset = container.scrollTop;
 			positionTracker.updateFromScroll(scrollOffset, []);
-			Effect.runPromise(positionTracker.saveImmediately()).catch(console.error);
+			forkLoggedEffect(positionTracker.saveImmediately(), 'Failed to flush reading position');
 			positionTracker.cleanup();
 		}
 
@@ -280,13 +279,13 @@
 		clearSelection();
 
 		try {
-			const convexUser = await Effect.runPromise(lookupConvexUserId(userId));
+			const convexUser = await runAppEffect(lookupConvexUserId(userId));
 			if (!convexUser) {
 				toastState.showError('Not authenticated');
 				return;
 			}
 
-			const annotationId = await Effect.runPromise(
+			const annotationId = await runAppEffect(
 				createAnnotation({
 					bookId,
 					userId: convexUser._id,
